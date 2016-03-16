@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="br.unb.sma.agents.gui.AGPview">
+  <grid id="27dc6" binding="form" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="20" y="20" width="500" height="400"/>
+    </constraints>
+    <properties>
+      <opaque value="true"/>
+      <preferredSize width="440" height="280"/>
+    </properties>
+    <border type="none"/>
+    <children>
+      <scrollpane id="33aa" binding="paneAP">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <opaque value="false"/>
+        </properties>
+        <border type="none" title="Protocolos"/>
+        <children>
+          <component id="2a965" class="javax.swing.JList" binding="listAP">
+            <constraints/>
+            <properties>
+              <opaque value="false"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <scrollpane id="a8123" binding="paneAM">
+        <constraints>
+          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <opaque value="false"/>
+        </properties>
+        <border type="none" title="Magistrados"/>
+        <children>
+          <component id="f0181" class="javax.swing.JList" binding="listAM">
+            <constraints/>
+            <properties>
+              <background color="-1"/>
+              <opaque value="false"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <scrollpane id="4248f" binding="paneAD">
+        <constraints>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <opaque value="false"/>
+        </properties>
+        <border type="none" title="Distribuidores"/>
+        <children>
+          <component id="7e29d" class="javax.swing.JList" binding="listAD">
+            <constraints/>
+            <properties>
+              <opaque value="false"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <component id="7a551" class="javax.swing.JButton" binding="ativarAP">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <text value="&amp;Ativar"/>
+        </properties>
+      </component>
+      <component id="b517a" class="javax.swing.JButton" binding="ativarAD">
+        <constraints>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <text value="A&amp;tivar"/>
+        </properties>
+      </component>
+      <component id="56de7" class="javax.swing.JButton" binding="ativarAM">
+        <constraints>
+          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <text value="At&amp;ivar"/>
+        </properties>
+      </component>
+      <component id="cacbd" class="javax.swing.JButton" binding="desativarAP">
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <text value="&amp;Desativar"/>
+        </properties>
+      </component>
+      <component id="cad53" class="javax.swing.JButton" binding="desativarAD">
+        <constraints>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <text value="D&amp;esativar"/>
+        </properties>
+      </component>
+      <component id="c5d78" class="javax.swing.JButton" binding="desativarAM">
+        <constraints>
+          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <maximum-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <text value="De&amp;sativar"/>
+        </properties>
+      </component>
+    </children>
+  </grid>
+  <inspectionSuppressions>
+    <suppress inspection="NoLabelFor"/>
+  </inspectionSuppressions>
+</form>

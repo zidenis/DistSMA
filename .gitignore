@@ -1,0 +1,8 @@
+.idea/
+bin/
+out/
+res/
+DistSMA.iml
+*javadoc*
+*sources*
+.DS_Store

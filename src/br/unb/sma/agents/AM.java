@@ -1,6 +1,5 @@
 package br.unb.sma.agents;
 
-import br.unb.sma.entities.Magistrado;
 import br.unb.sma.utils.Utils;
 import jade.core.Agent;
 
@@ -10,17 +9,19 @@ import jade.core.Agent;
  */
 public class AM extends Agent {
 
-    Magistrado magistrado;
-    String status;
+    @Override
+    protected void setup() {
+        Utils.logInfo(getLocalName() + " : agente iniciado");
+    }
 
-    public AM(Magistrado magistrado) {
-        this.magistrado = magistrado;
-        status = "não iniciado";
-        Utils.logInfo(magistrado.getCodMagistrado() + ": agente iniciado");
+    @Override
+    public void doDelete() {
+        Utils.logInfo(getLocalName() + " : agente finalizado");
+        super.doDelete();
     }
 
     @Override
     public String toString() {
-        return magistrado.getCodMagistrado() + " (" + getAgentState().toString() + ")";
+        return getLocalName() + " (" + getAgentState().toString() + ")";
     }
 }

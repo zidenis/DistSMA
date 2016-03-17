@@ -1,6 +1,5 @@
 package br.unb.sma.agents;
 
-import br.unb.sma.entities.Distribuidor;
 import br.unb.sma.utils.Utils;
 import jade.core.Agent;
 
@@ -10,17 +9,19 @@ import jade.core.Agent;
  */
 public class AD extends Agent {
 
-    Distribuidor distribuidor;
-    String status;
+    @Override
+    protected void setup() {
+        Utils.logInfo(getLocalName() + " : agente iniciado");
+    }
 
-    public AD(Distribuidor distribuidor) {
-        this.distribuidor = distribuidor;
-        status = "não iniciado";
-        Utils.logInfo(distribuidor.getCodDistribuidor() + ": agente iniciado");
+    @Override
+    public void doDelete() {
+        Utils.logInfo(getLocalName() + " : agente finalizado");
+        super.doDelete();
     }
 
     @Override
     public String toString() {
-        return distribuidor.getCodDistribuidor() + " (" + getAgentState().toString() + ")";
+        return getLocalName() + " (" + getAgentState().toString() + ")";
     }
 }

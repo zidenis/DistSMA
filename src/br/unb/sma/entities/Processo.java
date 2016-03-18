@@ -137,18 +137,13 @@ public class Processo implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Processo (");
-
-        sb.append(codProcesso);
-        sb.append(", ").append(numProcesso);
-        sb.append(", ").append(numDigito);
-        sb.append(", ").append(anoProcesso);
-        sb.append(", ").append(numSegmento);
-        sb.append(", ").append(numTribunal);
-        sb.append(", ").append(numOrigem);
-        sb.append(", ").append(dtaAutuacao);
-
-        sb.append(")");
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%07d", numProcesso));
+        sb.append("-").append(String.format("%02d", numDigito));
+        sb.append(".").append(anoProcesso);
+        sb.append(".").append(numSegmento);
+        sb.append(".").append(String.format("%02d", numTribunal));
+        sb.append(".").append(String.format("%04d", numOrigem));
         return sb.toString();
     }
 }

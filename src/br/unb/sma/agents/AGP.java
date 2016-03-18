@@ -42,7 +42,7 @@ public class AGP extends Agent {
             @Override
             public void run() {
                 try {
-                    gui = new JFrame("DistSMA: " + getLocalName());
+                    gui = new JFrame(getLocalName());
                     view = new AGPview(agent);
                     gui.setContentPane(view.getForm());
                     gui.pack();
@@ -87,6 +87,7 @@ public class AGP extends Agent {
         CreateAgent ca = new CreateAgent();
         ca.setAgentName(agentEntity.getAgentName());
         ca.setClassName(agentEntity.getClassName());
+        ca.addArguments(agentEntity);
         try {
             ca.setContainer(new ContainerID(getContainerController().getContainerName(), null));
             Action actExpr = new Action(getAMS(), ca);
@@ -118,8 +119,7 @@ public class AGP extends Agent {
 
     public void deactivateAgent(AgentEntity agentEntity) {
         KillAgent ka = new KillAgent();
-        AID aid = new AID();
-        aid.setName(agentEntity.getAgentName() + "@DistSMA");
+        AID aid = new AID(agentEntity.getAgentName(), AID.ISLOCALNAME);
         ka.setAgent(aid);
         try {
             Action actExpr = new Action(getAMS(), ka);

@@ -28,6 +28,8 @@ public class AGPview {
     private JScrollPane paneAP;
     private JScrollPane paneAM;
     private JScrollPane paneAD;
+    private JButton obterProc;
+    private JButton distribuir;
     private MyListModel<Protocolo> listAPModel;
     private MyListModel<Distribuidor> listADModel;
     private MyListModel<Magistrado> listAMModel;

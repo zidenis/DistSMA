@@ -88,7 +88,7 @@ public class AGPview {
 
     private void obterProcessos() {
         if (!listAP.isSelectionEmpty()) {
-            String input = JOptionPane.showInputDialog(form, "Quantidade de Processos", "Informe", JOptionPane.PLAIN_MESSAGE);
+            String input = (String) JOptionPane.showInputDialog(form, "Quantidade de Processos", "Informe", JOptionPane.QUESTION_MESSAGE, UIManager.getIcon("FileView.computerIcon"), null, "7");
             try {
                 if (input.equals("")) return;
                 Integer numProcesses = Integer.valueOf(input);

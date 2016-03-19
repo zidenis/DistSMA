@@ -38,9 +38,9 @@ public class ObtainLawsuitsAwaintingDistribution extends OneShotBehaviour {
              FROM t_processo proc
        INNER JOIN t_fase_processual fase
                ON proc.cod_processo = fase.cod_processo
-            WHERE num_tribunal = 0
+            WHERE num_tribunal = ?numTribunal?
               AND cod_magistrado is null
-            LIMIT 10
+            LIMIT ?qtdProcessos?
          */
         TProcesso p = T_PROCESSO.as("p");
         TFaseProcessual f = T_FASE_PROCESSUAL.as("f");

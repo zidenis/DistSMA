@@ -99,15 +99,6 @@ public class ComposicaoOj implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("ComposicaoOj (");
-
-        sb.append(codMagistrado);
-        sb.append(", ").append(dtaIniAtuacao);
-        sb.append(", ").append(dtaTerAtuacao);
-        sb.append(", ").append(indPresidente);
-        sb.append(", ").append(sigOj);
-
-        sb.append(")");
-        return sb.toString();
+        return sigOj;
     }
 }

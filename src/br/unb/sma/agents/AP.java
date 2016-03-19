@@ -51,6 +51,7 @@ public class AP extends Agent {
                     view = new APview(agent);
                     gui.setContentPane(view.getForm());
                     gui.pack();
+                    gui.setLocation(Utils.guiLocation());
                     gui.setVisible(true);
                     gui.addWindowListener(new WindowAdapter() {
                         @Override
@@ -82,7 +83,6 @@ public class AP extends Agent {
 
     @Override
     public void doDelete() {
-        super.doDelete();
         // Closing the database connection
         try {
             dbConnection.close();
@@ -92,6 +92,7 @@ public class AP extends Agent {
         //Closing the GUI
         gui.dispatchEvent(new WindowEvent(gui, WindowEvent.WINDOW_CLOSING));
         Utils.logInfo(getLocalName() + " : agente finalizado");
+        super.doDelete();
     }
 
     @Override

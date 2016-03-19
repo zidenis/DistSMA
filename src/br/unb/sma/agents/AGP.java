@@ -17,6 +17,7 @@ import jade.domain.FIPANames;
 import jade.domain.JADEAgentManagement.CreateAgent;
 import jade.domain.JADEAgentManagement.JADEManagementOntology;
 import jade.domain.JADEAgentManagement.KillAgent;
+import jade.domain.JADEAgentManagement.ShutdownPlatform;
 import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREInitiator;
 import org.jooq.DSLContext;
@@ -145,6 +146,31 @@ public class AGP extends Agent {
 
         } catch (Exception e) {
             Utils.logError(getLocalName() + " : erro ao desativar " + agentEntity.getAgentName());
+            e.printStackTrace();
+        }
+    }
+
+    public void reqObterProcessos(Protocolo protocolo, int numProcessos) {
+        ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+        msg.addReceiver(new AID(protocolo.getAgentName(), AID.ISLOCALNAME));
+        msg.setContent(AP.MSG_GET_PROCESSES);
+        msg.addUserDefinedParameter("numProcessos", String.valueOf(numProcessos));
+        send(msg);
+    }
+
+    public void encerrarSMA() {
+        ShutdownPlatform sd = new ShutdownPlatform();
+        try {
+            Action actExpr = new Action(getAMS(), sd);
+            ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
+            request.addReceiver(getAMS());
+            request.setOntology(JADEManagementOntology.getInstance().getName());
+            request.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
+            request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
+            getContentManager().fillContent(request, actExpr);
+            agent.send(request);
+        } catch (Exception e) {
+            Utils.logError(getLocalName() + " : erro ao encerrar o SMA");
             e.printStackTrace();
         }
     }

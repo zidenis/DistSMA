@@ -29,9 +29,12 @@ import static br.unb.sma.database.Tables.T_HIST_DISTRIBUICAO;
  * Created by zidenis.
  * 16-03-2016
  */
-public class AM extends Agent {
+public class AM extends Agent implements IAgent {
 
     public static final String MSG_DO_SOMETHING = "";
+
+    private final String SERVICE_TYPE = "magistrado";
+    private final String[] SERVICES = {AM.MSG_DO_SOMETHING};
 
     Connection dbConnection;
     DSLContext dbDSL;
@@ -74,6 +77,7 @@ public class AM extends Agent {
                     //Starting the initial behaviours
                     receiveMessages = new ReceiveMessages();
                     addBehaviour(receiveMessages);
+                    addBehaviour(new DFRegistration(agent, agent));
                     Utils.logInfo(getLocalName() + " : agente iniciado");
                     addBehaviour(new ObtainOJComposition(agent));
                     addBehaviour(new ObtainLawsuitsImpediments(agent));
@@ -186,4 +190,13 @@ public class AM extends Agent {
     }
 
 
+    @Override
+    public String getServiceType() {
+        return SERVICE_TYPE;
+    }
+
+    @Override
+    public String[] getServices() {
+        return SERVICES;
+    }
 }

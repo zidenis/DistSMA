@@ -1,6 +1,7 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.APview;
+import br.unb.sma.behaviors.DFRegistration;
 import br.unb.sma.behaviors.ObtainLawsuitsAwaintingDistribution;
 import br.unb.sma.behaviors.ReceiveMessages;
 import br.unb.sma.entities.Processo;
@@ -27,9 +28,13 @@ import java.util.List;
  * Created by zidenis.
  * 16-03-2016
  */
-public class AP extends Agent {
+public class AP extends Agent implements IAgent {
 
     public static final String MSG_GET_PROCESSES = "get-processes";
+    public static final String MSG_UPDATE_DATABASE = "update-database";
+
+    private final String SERVICE_TYPE = "protocolo";
+    private final String[] SERVICES = {AP.MSG_GET_PROCESSES, MSG_UPDATE_DATABASE};
 
     Connection dbConnection;
     DSLContext dbDSL;
@@ -71,6 +76,7 @@ public class AP extends Agent {
                     //Starting the initial behaviours
                     receiveMessages = new ReceiveMessages();
                     addBehaviour(receiveMessages);
+                    addBehaviour(new DFRegistration(agent, agent));
                     Utils.logInfo(getLocalName() + " : agente iniciado");
                 } catch (SQLException e) {
                     Utils.logError(getLocalName() + " : erro ao conectar com banco de dados");
@@ -93,6 +99,20 @@ public class AP extends Agent {
         gui.dispatchEvent(new WindowEvent(gui, WindowEvent.WINDOW_CLOSING));
         Utils.logInfo(getLocalName() + " : agente finalizado");
         super.doDelete();
+    }
+
+    private void dfServiceRegistration() {
+
+    }
+
+    @Override
+    public String getServiceType() {
+        return SERVICE_TYPE;
+    }
+
+    @Override
+    public String[] getServices() {
+        return SERVICES;
     }
 
     @Override

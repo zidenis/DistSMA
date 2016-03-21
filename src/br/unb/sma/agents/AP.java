@@ -2,7 +2,7 @@ package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.APview;
 import br.unb.sma.behaviors.DFRegistration;
-import br.unb.sma.behaviors.ObtainLawsuitsAwaintingDistribution;
+import br.unb.sma.behaviors.ObtainLawsuitAwaintingDistribution;
 import br.unb.sma.behaviors.ReceiveMessages;
 import br.unb.sma.entities.Processo;
 import br.unb.sma.entities.Protocolo;
@@ -21,8 +21,9 @@ import java.awt.event.WindowEvent;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
+
+import static br.unb.sma.database.Tables.T_FASE_PROCESSUAL;
+import static br.unb.sma.database.Tables.T_PROCESSO;
 
 /**
  * Created by zidenis.
@@ -30,61 +31,36 @@ import java.util.List;
  */
 public class AP extends Agent implements IAgent {
 
-    public static final String MSG_GET_PROCESSES = "get-processes";
-    public static final String MSG_UPDATE_DATABASE = "update-database";
+    public static final String GET_LAWSUIT = "get-lawsuit";
+    public static final String UPDATE_LAWSUIT_DB = "update-lawsuit-db";
 
-    private final String SERVICE_TYPE = "protocolo";
-    private final String[] SERVICES = {AP.MSG_GET_PROCESSES, MSG_UPDATE_DATABASE};
+    private final String SERVICE_TYPE = "AP";
+    private final String[] SERVICES = {AP.GET_LAWSUIT, UPDATE_LAWSUIT_DB};
 
     Connection dbConnection;
     DSLContext dbDSL;
     Protocolo protocolo;
-    List<Processo> processos;
+    Processo processo;
+    Integer qtdProcessos;
     CyclicBehaviour receiveMessages;
+
     private JFrame gui;
     private AP agent = this;
     private APview view;
 
     @Override
     protected void setup() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    //Loading the GUI
-                    gui = new JFrame(getLocalName());
-                    view = new APview(agent);
-                    gui.setContentPane(view.getForm());
-                    gui.pack();
-                    gui.setLocation(Utils.guiLocation());
-                    gui.setVisible(true);
-                    gui.addWindowListener(new WindowAdapter() {
-                        @Override
-                        public void windowClosing(WindowEvent e) {
-                            super.windowClosing(e);
-                            //agent.doDelete();
-                        }
-                    });
-                    //Retrieves startup arguments
-                    protocolo = (Protocolo) getArguments()[0];
-                    //Opening connection to the database
-                    dbConnection = DriverManager.getConnection(DBconf.URL, DBconf.USERNAME, DBconf.PASSWORD);
-                    dbDSL = DSL.using(dbConnection, SQLDialect.POSTGRES);
-                    processos = new ArrayList<>();
-                    //Registering the provided services in the yellow pages catalogue (DF agent)
-
-                    //Starting the initial behaviours
-                    receiveMessages = new ReceiveMessages();
-                    addBehaviour(receiveMessages);
-                    addBehaviour(new DFRegistration(agent, agent));
-                    Utils.logInfo(getLocalName() + " : agente iniciado");
-                } catch (SQLException e) {
-                    Utils.logError(getLocalName() + " : erro ao conectar com banco de dados");
-                } catch (Exception e) {
-                    Utils.logError(getLocalName() + " : erro ao criar GUI");
-                }
-            }
-        });
+        protocolo = (Protocolo) getArguments()[0];
+        dbConnect();
+        loadGUI();
+        Utils.logInfo(getLocalName() + " : agente iniciado");
+        //Retrieves startup arguments
+        //Registering the provided services in the yellow pages catalogue (DF agent)
+        addBehaviour(new DFRegistration(agent, agent));
+        //Starting the initial behaviours
+        receiveMessages = new ReceiveMessages();
+        addBehaviour(receiveMessages);
+        addBehaviour(new ObtainLawsuitAwaintingDistribution(agent, protocolo.getNumTribunal()));
     }
 
     @Override
@@ -101,10 +77,6 @@ public class AP extends Agent implements IAgent {
         super.doDelete();
     }
 
-    private void dfServiceRegistration() {
-
-    }
-
     @Override
     public String getServiceType() {
         return SERVICE_TYPE;
@@ -117,29 +89,28 @@ public class AP extends Agent implements IAgent {
 
     @Override
     public String toString() {
-        return getLocalName() + " (" + getAgentState().toString() + ")";
-    }
-
-    public Protocolo getProtocolo() {
-        return protocolo;
+        return protocolo.getNomProtocolo() + " (" + getAgentState().toString() + ")";
     }
 
     public DSLContext getDbDSL() {
         return dbDSL;
     }
 
-    public List<Processo> getProcessos() {
-        return processos;
-    }
-
-    public void setProcessos(List<Processo> processos) {
-        this.processos = processos;
-        SwingUtilities.invokeLater(() -> {
-            if (gui.isDisplayable()) {
-                view.getListProcessosModel().clear();
-                processos.forEach(processo -> view.getListProcessosModel().addElement(processo));
-            }
-        });
+    public void setProcesso(Processo processo) {
+        if (processo != null) {
+            this.processo = processo;
+            SwingUtilities.invokeLater(() -> {
+                if (gui.isDisplayable()) {
+                    view.setProcesso(processo.toString());
+                }
+            });
+        } else {
+            SwingUtilities.invokeLater(() -> {
+                if (gui.isDisplayable()) {
+                    view.setProcesso("sem processos");
+                }
+            });
+        }
     }
 
     @Override
@@ -153,9 +124,62 @@ public class AP extends Agent implements IAgent {
     }
 
     private void processMessage(ACLMessage msg) {
-        if (msg.getContent().equals(MSG_GET_PROCESSES)) {
-            int numProcesses = Integer.valueOf(msg.getUserDefinedParameter("numProcessos"));
-            addBehaviour(new ObtainLawsuitsAwaintingDistribution(agent, protocolo.getNumTribunal(), numProcesses));
+        if (msg.getContent().equals(GET_LAWSUIT)) {
+
+        }
+    }
+
+    private void loadGUI() {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //Loading the GUI
+                    gui = new JFrame("AP : " + protocolo.getNomProtocolo());
+                    view = new APview(agent);
+                    gui.setContentPane(view.getForm());
+                    gui.pack();
+                    gui.setLocation(Utils.guiLocation());
+                    gui.setVisible(true);
+                    gui.addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosing(WindowEvent e) {
+                            super.windowClosing(e);
+                        }
+                    });
+                    view.setQtdProcessosFila(getQtdProcessos());
+                } catch (Exception e) {
+                    Utils.logError(getLocalName() + " : erro ao criar GUI");
+                    e.printStackTrace();
+                }
+            }
+
+        });
+    }
+
+    private void dbConnect() {
+        try {
+            //Opening connection to the database
+            dbConnection = DriverManager.getConnection(DBconf.URL, DBconf.USERNAME, DBconf.PASSWORD);
+            dbDSL = DSL.using(dbConnection, SQLDialect.POSTGRES);
+        } catch (SQLException e) {
+            Utils.logError(getLocalName() + " : erro ao conectar com banco de dados");
+        }
+    }
+
+    private Integer getQtdProcessos() {
+        if (qtdProcessos == null) {
+            return getDbDSL()
+                    .selectCount()
+                    .from(T_PROCESSO)
+                    .innerJoin(T_FASE_PROCESSUAL)
+                    .on(T_PROCESSO.COD_PROCESSO.equal(T_FASE_PROCESSUAL.COD_PROCESSO))
+                    .where(T_PROCESSO.NUM_TRIBUNAL.equal(protocolo.getNumTribunal()))
+                    .and(T_FASE_PROCESSUAL.COD_MAGISTRADO.isNull())
+                    .fetchOne()
+                    .value1();
+        } else {
+            return qtdProcessos;
         }
     }
 }

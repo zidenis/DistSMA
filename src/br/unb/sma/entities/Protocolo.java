@@ -45,7 +45,7 @@ public class Protocolo implements Serializable, AgentEntity {
 
     @Override
     public String toString() {
-        return codProtocolo + (status.equals(Status.LOADED) ? status : " (" + status + ")");
+        return nomProtocolo + (status.equals(Status.LOADED) ? status : " (" + status + ")");
     }
 
     @Override

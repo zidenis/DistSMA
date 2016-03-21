@@ -1,7 +1,10 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.AMview;
-import br.unb.sma.behaviors.*;
+import br.unb.sma.behaviors.DFRegistration;
+import br.unb.sma.behaviors.ObtainImpediments;
+import br.unb.sma.behaviors.ObtainOJComposition;
+import br.unb.sma.behaviors.ReceiveMessages;
 import br.unb.sma.entities.ComposicaoOj;
 import br.unb.sma.entities.Magistrado;
 import br.unb.sma.utils.DBconf;
@@ -80,9 +83,7 @@ public class AM extends Agent implements IAgent {
                     addBehaviour(new DFRegistration(agent, agent));
                     Utils.logInfo(getLocalName() + " : agente iniciado");
                     addBehaviour(new ObtainOJComposition(agent));
-                    addBehaviour(new ObtainLawsuitsImpediments(agent));
-                    addBehaviour(new ObtainPartyImpediments(agent));
-                    addBehaviour(new ObtainLaywerImpediments(agent));
+                    addBehaviour(new ObtainImpediments(agent));
                     updateNumProcessosBaixados();
                     updateNumProcessosDistribuidos();
                 } catch (SQLException e) {

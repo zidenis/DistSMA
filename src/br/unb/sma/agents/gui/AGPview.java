@@ -28,8 +28,6 @@ public class AGPview {
     private JScrollPane paneAP;
     private JScrollPane paneAM;
     private JScrollPane paneAD;
-    private JButton obterProc;
-    private JButton distribuir;
     private JButton encerrarSMA;
     private MyListModel<Protocolo> listAPModel;
     private MyListModel<Distribuidor> listADModel;
@@ -49,7 +47,6 @@ public class AGPview {
         desativarAD.addActionListener(e -> desativarADselecionado());
         ativarAM.addActionListener(e -> ativarAMselecionado());
         desativarAM.addActionListener(e -> desativarAMselecionado());
-        obterProc.addActionListener(e -> obterProcessos());
         encerrarSMA.addActionListener(e -> encerrarSMA());
     }
 
@@ -82,25 +79,6 @@ public class AGPview {
             String status = protocolo.getStatus();
             if (status.equals(Status.ATIVADO)) {
                 agent.deactivateAgent(protocolo);
-            }
-        }
-    }
-
-    private void obterProcessos() {
-        if (!listAP.isSelectionEmpty()) {
-            String input = (String) JOptionPane.showInputDialog(form, "Quantidade de Processos", "Informe", JOptionPane.QUESTION_MESSAGE, UIManager.getIcon("FileView.computerIcon"), null, "7");
-            try {
-                if (input.equals("")) return;
-                Integer numProcesses = Integer.valueOf(input);
-                for (Protocolo protocolo : (List<Protocolo>) listAP.getSelectedValuesList()) {
-                    String status = protocolo.getStatus();
-                    if (status.equals(Status.ATIVADO)) {
-                        agent.reqObterProcessos(protocolo, numProcesses);
-                    }
-                }
-            } catch (NumberFormatException e) {
-                obterProcessos();
-            } catch (NullPointerException e) {
             }
         }
     }
@@ -140,7 +118,7 @@ public class AGPview {
     }
 
     private void encerrarSMA() {
-        agent.encerrarSMA();
+        agent.shutdownSMA();
     }
 
     public void update() {

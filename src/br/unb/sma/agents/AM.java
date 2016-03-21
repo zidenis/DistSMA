@@ -58,7 +58,7 @@ public class AM extends Agent implements IAgent {
             public void run() {
                 try {
                     //Loading the GUI
-                    gui = new JFrame(getLocalName());
+                    gui = new JFrame("AM : " + getLocalName());
                     view = new AMview(agent);
                     gui.setContentPane(view.getForm());
                     gui.pack();
@@ -68,7 +68,6 @@ public class AM extends Agent implements IAgent {
                         @Override
                         public void windowClosing(WindowEvent e) {
                             super.windowClosing(e);
-                            //agent.doDelete();
                         }
                     });
                     //Retrieves startup arguments

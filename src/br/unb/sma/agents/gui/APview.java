@@ -1,7 +1,6 @@
 package br.unb.sma.agents.gui;
 
 import br.unb.sma.agents.AP;
-import br.unb.sma.entities.Processo;
 
 import javax.swing.*;
 
@@ -12,21 +11,25 @@ import javax.swing.*;
 public class APview {
     AP agent;
     private JPanel form;
-    private JScrollPane paneProcessos;
-    private JList listProcessos;
-    private MyListModel<Processo> listProcessosModel;
+    private JLabel processo;
+    private JLabel qtdProcessosLabel;
+    private JPanel processoPane;
+    private JLabel qtdProcessos;
 
     public APview(AP agent) {
         this.agent = agent;
-        listProcessosModel = new MyListModel<Processo>();
-        listProcessos.setModel(listProcessosModel);
     }
 
     public JPanel getForm() {
         return form;
     }
 
-    public MyListModel<Processo> getListProcessosModel() {
-        return listProcessosModel;
+    public void setProcesso(String processoNum) {
+        processo.setText(processoNum);
     }
+
+    public void setQtdProcessosFila(Integer qtd) {
+        qtdProcessos.setText(String.valueOf(qtd));
+    }
+
 }

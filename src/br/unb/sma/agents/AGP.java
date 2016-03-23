@@ -8,22 +8,24 @@ import br.unb.sma.behaviors.ShutdownSMA;
 import br.unb.sma.utils.AgentEntity;
 import br.unb.sma.utils.Utils;
 import jade.content.lang.sl.SLCodec;
-import jade.core.Agent;
+import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPANames;
 import jade.domain.JADEAgentManagement.JADEManagementOntology;
+import jade.lang.acl.ACLMessage;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class AGP extends Agent {
+public class AGP extends SMAgent {
+
+    CyclicBehaviour receiveMessages;
 
     private JFrame gui;
     private AGP agent = this;
     private AGPview view;
 
     protected void setup() {
-        Utils.logInfo(getLocalName() + " : DistSMA setup");
         getContentManager().registerLanguage(new SLCodec(), FIPANames.ContentLanguage.FIPA_SL);
         getContentManager().registerOntology(JADEManagementOntology.getInstance());
         loadGUI();
@@ -68,5 +70,30 @@ public class AGP extends Agent {
                 }
             }
         });
+    }
+
+    @Override
+    public String getServiceType() {
+        return null;
+    }
+
+    @Override
+    public String[] getServices() {
+        return new String[0];
+    }
+
+    @Override
+    protected void processMessage(ACLMessage msg) {
+
+    }
+
+    @Override
+    public void closeGUI() {
+        gui.dispatchEvent(new WindowEvent(gui, WindowEvent.WINDOW_CLOSING));
+    }
+
+    @Override
+    public CyclicBehaviour receiveMessages() {
+        return receiveMessages;
     }
 }

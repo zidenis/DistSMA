@@ -1,6 +1,6 @@
 package br.unb.sma.behaviors;
 
-import br.unb.sma.agents.IAgent;
+import br.unb.sma.agents.SMAgent;
 import br.unb.sma.utils.Utils;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
@@ -15,9 +15,9 @@ import jade.domain.FIPAException;
  */
 public class DFRegistration extends OneShotBehaviour {
 
-    IAgent agent;
+    SMAgent agent;
 
-    public DFRegistration(Agent a, IAgent agent) {
+    public DFRegistration(Agent a, SMAgent agent) {
         super(a);
         this.agent = agent;
     }

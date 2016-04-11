@@ -5,6 +5,7 @@ import br.unb.sma.behaviors.ReceiveMessages;
 import br.unb.sma.utils.DBconf;
 import br.unb.sma.utils.Utils;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
@@ -47,7 +48,7 @@ public abstract class SMAgent extends Agent {
         doSuspend();
         if (receiveMessages() != null) {
             ACLMessage msg = (ACLMessage) receiveMessages().getDataStore().get(ReceiveMessages.RCVD_MSG);
-            processMessage(msg);
+            processMessages(msg);
         }
         super.doActivate();
     }
@@ -94,7 +95,9 @@ public abstract class SMAgent extends Agent {
 
     public abstract String[] getServices();
 
-    protected abstract void processMessage(ACLMessage msg);
+    protected void processMessages(ACLMessage msg) {
+        Utils.logInfo(getLocalName() + " - mensagem recebida de " + msg.getSender().getLocalName());
+    }
 
     protected abstract void loadGUI();
 
@@ -106,4 +109,9 @@ public abstract class SMAgent extends Agent {
 
     public abstract CyclicBehaviour receiveMessages();
 
+    @Override
+    public void addBehaviour(Behaviour b) {
+        Utils.logInfo(getLocalName() + " - tarefa iniciada : " + b.getClass().getSimpleName());
+        super.addBehaviour(b);
+    }
 }

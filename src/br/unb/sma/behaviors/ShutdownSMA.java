@@ -16,7 +16,6 @@ public class ShutdownSMA extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : ShutdownSMA");
         ShutdownPlatform sd = new ShutdownPlatform();
         try {
             Action actExpr = new Action(myAgent.getAMS(), sd);

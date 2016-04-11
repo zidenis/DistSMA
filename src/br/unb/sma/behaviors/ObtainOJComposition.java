@@ -2,7 +2,6 @@ package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AM;
 import br.unb.sma.entities.ComposicaoOj;
-import br.unb.sma.utils.Utils;
 import jade.core.behaviours.OneShotBehaviour;
 
 import java.util.List;
@@ -24,7 +23,6 @@ public class ObtainOJComposition extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : ObtainOJComposition");
         List<ComposicaoOj> composicaoOjList;
         /* Obter Órgãos Judicantes de um determinado Magistrado
         SELECT *

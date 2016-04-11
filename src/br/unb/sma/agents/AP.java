@@ -23,8 +23,8 @@ public class AP extends SMAgent {
 
     public static final String GET_LAWSUIT = "get-lawsuit";
     public static final String UPDATE_LAWSUIT_DB = "update-lawsuit-db";
+    public static final String SERVICE_TYPE = "AP";
 
-    private final String SERVICE_TYPE = "AP";
     private final String[] SERVICES = {AP.GET_LAWSUIT, UPDATE_LAWSUIT_DB};
 
     Protocolo protocolo;
@@ -79,10 +79,10 @@ public class AP extends SMAgent {
         }
     }
 
-    protected void processMessage(ACLMessage msg) {
-        Utils.logInfo(getLocalName() + " : mensagem recebida de " + msg.getSender().getLocalName());
-        if (msg.getContent().equals(GET_LAWSUIT)) {
-            Utils.logInfo(msg.getContent());
+    protected void processMessages(ACLMessage msg) {
+        super.processMessages(msg);
+        switch (msg.getContent()) {
+
         }
     }
 

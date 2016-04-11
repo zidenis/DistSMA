@@ -31,7 +31,6 @@ public class DeactivateAgent extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : DeactivateAgent");
         KillAgent ka = new KillAgent();
         AID aid = new AID(agentEntity.getAgentName(), AID.ISLOCALNAME);
         ka.setAgent(aid);

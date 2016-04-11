@@ -23,7 +23,6 @@ public class DFRegistration extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : DFRegistration");
         try {
             DFAgentDescription dfd = new DFAgentDescription();
             dfd.setName(myAgent.getAID());

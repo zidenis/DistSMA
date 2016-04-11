@@ -32,7 +32,6 @@ public class GetAgentsInfo extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : GetAgentsInfo");
         try (Connection conn = DriverManager.getConnection(DBconf.URL, DBconf.USERNAME, DBconf.PASSWORD)) {
             DSLContext dsl = DSL.using(conn, SQLDialect.POSTGRES);
             for (Protocolo protocolo : dsl.select().from(T_PROTOCOLO).fetch().into(Protocolo.class)) {

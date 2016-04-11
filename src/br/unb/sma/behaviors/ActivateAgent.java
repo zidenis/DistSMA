@@ -31,7 +31,6 @@ public class ActivateAgent extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : ActivateAgent");
         try {
             CreateAgent ca = new CreateAgent();
             ca.setAgentName(agentEntity.getAgentName());
@@ -45,9 +44,7 @@ public class ActivateAgent extends OneShotBehaviour {
             request.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
             request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             myAgent.getContentManager().fillContent(request, actExpr);
-
             myAgent.addBehaviour(new AchieveREInitiator(myAgent, request) {
-
                 @Override
                 protected void handleInform(ACLMessage inform) {
                     agentEntity.setStatus(Status.ATIVADO);

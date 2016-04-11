@@ -7,11 +7,14 @@ import br.unb.sma.entities.ComposicaoOj;
 import br.unb.sma.entities.Magistrado;
 import br.unb.sma.utils.Utils;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Set;
 
@@ -24,10 +27,10 @@ import static br.unb.sma.database.Tables.T_HIST_DISTRIBUICAO;
  */
 public class AM extends SMAgent {
 
-    public static final String MSG_DO_SOMETHING = "";
+    public static final String GET_COMPOSITION = "get-composition";
+    public static final String SERVICE_TYPE = "AM";
 
-    private final String SERVICE_TYPE = "magistrado";
-    private final String[] SERVICES = {AM.MSG_DO_SOMETHING};
+    private final String[] SERVICES = {AM.GET_COMPOSITION};
 
     Magistrado magistrado;
     List<ComposicaoOj> composicaoOjList;
@@ -46,11 +49,22 @@ public class AM extends SMAgent {
         addBehaviour(new ObtainImpediments(agent));
     }
 
-
-    protected void processMessage(ACLMessage msg) {
-        Utils.logInfo(getLocalName() + " : mensagem recebida de " + msg.getSender().getLocalName());
-        if (msg.getContent().equals(MSG_DO_SOMETHING)) {
-            //TODO processar mensagens recebidas
+    protected void processMessages(ACLMessage msg) {
+        super.processMessages(msg);
+        switch (msg.getContent()) {
+            case GET_COMPOSITION:
+                ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
+                reply.addReceiver(msg.getSender());
+                Envelope envelope = new Envelope();
+                envelope.setComments(AD.INFORM_COMPOSTION);
+                reply.setEnvelope(envelope);
+                try {
+                    reply.setContentObject((Serializable) composicaoOjList);
+                    send(reply);
+                } catch (IOException e) {
+                    Utils.logError(getLocalName() + " : erro ao definir composição de magistrado");
+                }
+                break;
         }
     }
 

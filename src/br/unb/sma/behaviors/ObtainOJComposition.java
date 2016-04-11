@@ -24,7 +24,7 @@ public class ObtainOJComposition extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " : tarefa iniciada : ObtainOJComposition");
+        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : ObtainOJComposition");
         List<ComposicaoOj> composicaoOjList;
         /* Obter Órgãos Judicantes de um determinado Magistrado
         SELECT *

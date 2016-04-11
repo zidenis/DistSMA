@@ -27,7 +27,7 @@ public class ObtainLawsuitAwaintingDistribution extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " : tarefa iniciada : ObtainLawsuitAwaintingDistribution");
+        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : ObtainLawsuitAwaintingDistribution");
         Processo processo;
         /* Obter processo do banco de dados
            SELECT proc.cod_processo, num_processo, num_digito, ano_processo, num_segmento, num_tribunal, num_origem, dta_autuacao

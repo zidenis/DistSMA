@@ -1,9 +1,7 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.APview;
-import br.unb.sma.behaviors.DFRegistration;
 import br.unb.sma.behaviors.ObtainLawsuitAwaintingDistribution;
-import br.unb.sma.behaviors.ReceiveMessages;
 import br.unb.sma.entities.Processo;
 import br.unb.sma.entities.Protocolo;
 import br.unb.sma.utils.Utils;
@@ -32,7 +30,6 @@ public class AP extends SMAgent {
     Protocolo protocolo;
     Processo processo;
     Integer qtdProcessos;
-    CyclicBehaviour receiveMessages;
 
     private JFrame gui;
     private AP agent = this;
@@ -41,14 +38,7 @@ public class AP extends SMAgent {
     @Override
     protected void setup() {
         protocolo = (Protocolo) getArguments()[0];
-        loadGUI();
-        Utils.logInfo(getLocalName() + " : agente iniciado");
-        //Retrieves startup arguments
-        //Registering the provided services in the yellow pages catalogue (DF agent)
-        addBehaviour(new DFRegistration(agent, agent));
-        //Starting the initial behaviours
-        receiveMessages = new ReceiveMessages();
-        addBehaviour(receiveMessages);
+        super.setup();
         addBehaviour(new ObtainLawsuitAwaintingDistribution(agent, protocolo.getNumTribunal()));
     }
 
@@ -60,11 +50,6 @@ public class AP extends SMAgent {
     @Override
     public String[] getServices() {
         return SERVICES;
-    }
-
-    @Override
-    public void closeGUI() {
-        gui.dispatchEvent(new WindowEvent(gui, WindowEvent.WINDOW_CLOSING));
     }
 
     @Override
@@ -94,23 +79,14 @@ public class AP extends SMAgent {
         }
     }
 
-    @Override
-    public void doActivate() {
-        doSuspend();
-        if (receiveMessages != null) {
-            ACLMessage msg = (ACLMessage) receiveMessages.getDataStore().get(ReceiveMessages.RCVD_MSG);
-            processMessage(msg);
-        }
-        super.doActivate();
-    }
-
     protected void processMessage(ACLMessage msg) {
+        Utils.logInfo(getLocalName() + " : mensagem recebida de " + msg.getSender().getLocalName());
         if (msg.getContent().equals(GET_LAWSUIT)) {
-
+            Utils.logInfo(msg.getContent());
         }
     }
 
-    private void loadGUI() {
+    protected void loadGUI() {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -136,6 +112,11 @@ public class AP extends SMAgent {
             }
 
         });
+    }
+
+    @Override
+    protected JFrame getGUI() {
+        return gui;
     }
 
     private Integer getQtdProcessos() {

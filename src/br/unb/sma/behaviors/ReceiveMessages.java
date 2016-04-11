@@ -1,6 +1,5 @@
 package br.unb.sma.behaviors;
 
-import br.unb.sma.utils.Utils;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 
@@ -16,7 +15,7 @@ public class ReceiveMessages extends CyclicBehaviour {
     public void action() {
         ACLMessage msg = myAgent.receive();
         if (msg != null) {
-            Utils.logInfo(myAgent.getLocalName() + " : mensagem recebida de " + msg.getSender().getLocalName());
+            //Utils.logInfo(myAgent.getLocalName() + " : mensagem recebida de " + msg.getSender().getLocalName());
             getDataStore().put(RCVD_MSG, msg);
             myAgent.doActivate();
         } else {

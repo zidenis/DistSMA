@@ -23,7 +23,7 @@ public class ObtainImpediments extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " : tarefa iniciada : ObtainImpediments");
+        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : ObtainImpediments");
         /* Obter a relação de impedimentos quanto a processos para um determinado magistrado
         SELECT cod_processo
           FROM t_impedimento_processo

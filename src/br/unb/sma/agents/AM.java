@@ -1,10 +1,8 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.AMview;
-import br.unb.sma.behaviors.DFRegistration;
 import br.unb.sma.behaviors.ObtainImpediments;
 import br.unb.sma.behaviors.ObtainOJComposition;
-import br.unb.sma.behaviors.ReceiveMessages;
 import br.unb.sma.entities.ComposicaoOj;
 import br.unb.sma.entities.Magistrado;
 import br.unb.sma.utils.Utils;
@@ -32,7 +30,6 @@ public class AM extends SMAgent {
     private final String[] SERVICES = {AM.MSG_DO_SOMETHING};
 
     Magistrado magistrado;
-    CyclicBehaviour receiveMessages;
     List<ComposicaoOj> composicaoOjList;
     Set<Long> impedimentosProcessos;
     Set<Long> impedimentosPartes;
@@ -43,6 +40,22 @@ public class AM extends SMAgent {
 
     @Override
     protected void setup() {
+        magistrado = (Magistrado) getArguments()[0];
+        super.setup();
+        addBehaviour(new ObtainOJComposition(agent));
+        addBehaviour(new ObtainImpediments(agent));
+    }
+
+
+    protected void processMessage(ACLMessage msg) {
+        Utils.logInfo(getLocalName() + " : mensagem recebida de " + msg.getSender().getLocalName());
+        if (msg.getContent().equals(MSG_DO_SOMETHING)) {
+            //TODO processar mensagens recebidas
+        }
+    }
+
+    @Override
+    protected void loadGUI() {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -60,18 +73,9 @@ public class AM extends SMAgent {
                             super.windowClosing(e);
                         }
                     });
-                    //Retrieves startup arguments
-                    magistrado = (Magistrado) getArguments()[0];
-                    //Registering the provided services in the yellow pages catalogue (DF agent)
-                    //Starting the initial behaviours
-                    receiveMessages = new ReceiveMessages();
-                    addBehaviour(receiveMessages);
-                    addBehaviour(new DFRegistration(agent, agent));
-                    Utils.logInfo(getLocalName() + " : agente iniciado");
-                    addBehaviour(new ObtainOJComposition(agent));
-                    addBehaviour(new ObtainImpediments(agent));
                     updateNumProcessosBaixados();
                     updateNumProcessosDistribuidos();
+
                 } catch (Exception e) {
                     Utils.logError(getLocalName() + " : erro ao criar GUI");
                     e.printStackTrace();
@@ -80,32 +84,41 @@ public class AM extends SMAgent {
         });
     }
 
-
-    protected void processMessage(ACLMessage msg) {
-        if (msg.getContent().equals(MSG_DO_SOMETHING)) {
-            //TODO processar mensagens recebidas
-        }
+    @Override
+    protected JFrame getGUI() {
+        return gui;
     }
 
     public void setComposicaoOjList(List<ComposicaoOj> composicaoOjList) {
         this.composicaoOjList = composicaoOjList;
-        view.setComposicaoOJ(Utils.join(composicaoOjList.listIterator(), "\n"));
-        SwingUtilities.invokeLater(() -> gui.pack());
+        SwingUtilities.invokeLater(() -> {
+            view.setComposicaoOJ(Utils.join(composicaoOjList.listIterator(), "\n"));
+            gui.pack();
+        });
     }
 
     public void setImpedimentosProcessos(Set<Long> impedimentosProcessos) {
         this.impedimentosProcessos = impedimentosProcessos;
-        view.setQtdProcImped(String.valueOf(impedimentosProcessos.size()));
+        SwingUtilities.invokeLater(() -> {
+            view.setQtdProcImped(String.valueOf(impedimentosProcessos.size()));
+            gui.pack();
+        });
     }
 
     public void setImpedimentosPartes(Set<Long> impedimentosPartes) {
         this.impedimentosPartes = impedimentosPartes;
-        view.setQtdParteImped(String.valueOf(impedimentosPartes.size()));
+        SwingUtilities.invokeLater(() -> {
+            view.setQtdParteImped(String.valueOf(impedimentosPartes.size()));
+            gui.pack();
+        });
     }
 
     public void setImpedimentosAdvogados(Set<Integer> impedimentosAdvogados) {
         this.impedimentosAdvogados = impedimentosAdvogados;
-        view.setQtdAdvImped(String.valueOf(impedimentosAdvogados.size()));
+        SwingUtilities.invokeLater(() -> {
+            view.setQtdAdvImped(String.valueOf(impedimentosAdvogados.size()));
+            gui.pack();
+        });
     }
 
     private void updateNumProcessosDistribuidos() {
@@ -156,11 +169,6 @@ public class AM extends SMAgent {
     @Override
     public String[] getServices() {
         return SERVICES;
-    }
-
-    @Override
-    public void closeGUI() {
-        gui.dispatchEvent(new WindowEvent(gui, WindowEvent.WINDOW_CLOSING));
     }
 
     @Override

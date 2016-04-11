@@ -31,7 +31,7 @@ public class DeactivateAgent extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " : tarefa iniciada : DeactivateAgent");
+        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : DeactivateAgent");
         KillAgent ka = new KillAgent();
         AID aid = new AID(agentEntity.getAgentName(), AID.ISLOCALNAME);
         ka.setAgent(aid);
@@ -52,13 +52,12 @@ public class DeactivateAgent extends OneShotBehaviour {
 
                 @Override
                 protected void handleFailure(ACLMessage failure) {
-                    Utils.logError(myAgent.getLocalName() + " : erro ao desativar " + agentEntity.getAgentName());
+                    Utils.logError(myAgent.getLocalName() + " - erro ao desativar " + agentEntity.getAgentName());
                     Utils.logError(failure.getContent());
                 }
             });
-
         } catch (Exception e) {
-            Utils.logError(myAgent.getLocalName() + " : erro ao desativar " + agentEntity.getAgentName());
+            Utils.logError(myAgent.getLocalName() + " - erro ao desativar " + agentEntity.getAgentName());
             e.printStackTrace();
         }
     }

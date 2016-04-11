@@ -31,12 +31,12 @@ public class ActivateAgent extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " : tarefa iniciada : ActivateAgent");
-        CreateAgent ca = new CreateAgent();
-        ca.setAgentName(agentEntity.getAgentName());
-        ca.setClassName(agentEntity.getClassName());
-        ca.addArguments(agentEntity);
+        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : ActivateAgent");
         try {
+            CreateAgent ca = new CreateAgent();
+            ca.setAgentName(agentEntity.getAgentName());
+            ca.setClassName(agentEntity.getClassName());
+            ca.addArguments(agentEntity);
             ca.setContainer(new ContainerID(myAgent.getContainerController().getContainerName(), null));
             Action actExpr = new Action(myAgent.getAMS(), ca);
             ACLMessage request = new ACLMessage(ACLMessage.REQUEST);
@@ -45,7 +45,9 @@ public class ActivateAgent extends OneShotBehaviour {
             request.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
             request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             myAgent.getContentManager().fillContent(request, actExpr);
+
             myAgent.addBehaviour(new AchieveREInitiator(myAgent, request) {
+
                 @Override
                 protected void handleInform(ACLMessage inform) {
                     agentEntity.setStatus(Status.ATIVADO);
@@ -54,13 +56,13 @@ public class ActivateAgent extends OneShotBehaviour {
 
                 @Override
                 protected void handleFailure(ACLMessage failure) {
-                    Utils.logError(myAgent.getLocalName() + " : erro ao iniciar o " + agentEntity.getAgentName());
+                    Utils.logError(myAgent.getLocalName() + " - erro ao iniciar o " + agentEntity.getAgentName());
                     Utils.logError(failure.getContent());
                 }
             });
 
         } catch (Exception e) {
-            Utils.logError(myAgent.getLocalName() + " : erro ao iniciar " + agentEntity.getAgentName());
+            Utils.logError(myAgent.getLocalName() + " - erro ao iniciar " + agentEntity.getAgentName());
             e.printStackTrace();
         }
     }

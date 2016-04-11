@@ -16,7 +16,7 @@ public class ShutdownSMA extends OneShotBehaviour {
 
     @Override
     public void action() {
-        Utils.logInfo(myAgent.getLocalName() + " : tarefa iniciada : ShutdownSMA");
+        Utils.logInfo(myAgent.getLocalName() + " - tarefa iniciada : ShutdownSMA");
         ShutdownPlatform sd = new ShutdownPlatform();
         try {
             Action actExpr = new Action(myAgent.getAMS(), sd);
@@ -28,7 +28,7 @@ public class ShutdownSMA extends OneShotBehaviour {
             myAgent.getContentManager().fillContent(request, actExpr);
             myAgent.send(request);
         } catch (Exception e) {
-            Utils.logError(myAgent.getLocalName() + " : erro ao encerrar o SMA");
+            Utils.logError(myAgent.getLocalName() + " - erro ao encerrar o SMA");
             e.printStackTrace();
         }
     }

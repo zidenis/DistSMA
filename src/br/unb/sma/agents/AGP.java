@@ -19,8 +19,6 @@ import java.awt.event.WindowEvent;
 
 public class AGP extends SMAgent {
 
-    CyclicBehaviour receiveMessages;
-
     private JFrame gui;
     private AGP agent = this;
     private AGPview view;
@@ -28,9 +26,9 @@ public class AGP extends SMAgent {
     protected void setup() {
         getContentManager().registerLanguage(new SLCodec(), FIPANames.ContentLanguage.FIPA_SL);
         getContentManager().registerOntology(JADEManagementOntology.getInstance());
-        loadGUI();
-        Utils.logInfo(getLocalName() + " : agente iniciado");
         addBehaviour(new GetAgentsInfo(agent));
+        super.setup();
+        removeBehaviour(receiveMessages);
     }
 
     public void activateAgent(AgentEntity agentEntity) {
@@ -49,7 +47,8 @@ public class AGP extends SMAgent {
         return view;
     }
 
-    private void loadGUI() {
+    @Override
+    protected void loadGUI() {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -66,7 +65,7 @@ public class AGP extends SMAgent {
                         }
                     });
                 } catch (Exception e) {
-                    Utils.logError(getLocalName() + " : erro ao criar GUI");
+                    Utils.logError(getLocalName() + " - erro ao criar GUI");
                 }
             }
         });
@@ -88,8 +87,8 @@ public class AGP extends SMAgent {
     }
 
     @Override
-    public void closeGUI() {
-        gui.dispatchEvent(new WindowEvent(gui, WindowEvent.WINDOW_CLOSING));
+    protected JFrame getGUI() {
+        return gui;
     }
 
     @Override

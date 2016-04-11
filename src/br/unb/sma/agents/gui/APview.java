@@ -9,7 +9,7 @@ import javax.swing.*;
  * 17-03-2016
  */
 public class APview {
-    AP agent;
+    private AP agent;
     private JPanel form;
     private JLabel processo;
     private JLabel qtdProcessosLabel;

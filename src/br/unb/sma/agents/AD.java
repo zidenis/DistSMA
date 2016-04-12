@@ -1,11 +1,9 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.ADview;
-import br.unb.sma.behaviors.DiscoverMagistrateAgents;
-import br.unb.sma.behaviors.DiscoverProtocolAgents;
-import br.unb.sma.behaviors.ObtainOJCompetencies;
-import br.unb.sma.behaviors.RequestOJComposition;
+import br.unb.sma.behaviors.*;
 import br.unb.sma.entities.ComposicaoOj;
+import br.unb.sma.entities.ProcessoCompleto;
 import br.unb.sma.utils.Utils;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
@@ -24,10 +22,11 @@ import java.util.*;
  */
 public class AD extends SMAgent {
 
-    public static final String DISTRIBUTE = "distribute";
     public static final String SERVICE_TYPE = "AD";
+    public static final String DISTRIBUTE = "distribute";
     public static final String INFORM_COMPOSTION = "inform-composition";
-
+    public static final String INFORM_LAWSUIT = "inform-lawsuit";
+    public static final String INFORM_PLATAFORM_CHANGE = "inform-plataform-change";
     private final String[] SERVICES = {DISTRIBUTE};
 
     private JFrame gui;
@@ -42,7 +41,6 @@ public class AD extends SMAgent {
     protected void setup() {
         super.setup();
         addBehaviour(new ObtainOJCompetencies(this));
-        findAgents();
     }
 
     @Override
@@ -65,12 +63,18 @@ public class AD extends SMAgent {
         super.processMessages(msg);
         switch (msg.getEnvelope().getComments()) {
             case INFORM_COMPOSTION:
-                processCompositionInfo(msg);
+                processInformComposition(msg);
+                break;
+            case INFORM_LAWSUIT:
+                processInformLawsuit(msg);
+                break;
+            case INFORM_PLATAFORM_CHANGE:
+                informPlataformChange();
                 break;
         }
     }
 
-    private void processCompositionInfo(ACLMessage msg) {
+    private void processInformComposition(ACLMessage msg) {
         try {
             List<ComposicaoOj> composicaoOjList = (List) msg.getContentObject();
             for (ComposicaoOj coj : composicaoOjList) {
@@ -89,6 +93,19 @@ public class AD extends SMAgent {
         } catch (UnreadableException e) {
             Utils.logError(getLocalName() + " : erro ao identificar OJs de " + msg.getSender().getLocalName());
         }
+    }
+
+    private void processInformLawsuit(ACLMessage msg) {
+        try {
+            ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
+            //Utils.logInfo(pc.toString());
+        } catch (UnreadableException e) {
+            Utils.logError(getLocalName() + " : erro no Processo recebido de " + msg.getSender().getLocalName());
+        }
+    }
+
+    private void informPlataformChange() {
+        findAgents();
     }
 
     protected void loadGUI() {
@@ -155,12 +172,18 @@ public class AD extends SMAgent {
         addBehaviour(new RequestOJComposition(this, magistrateAgents));
     }
 
-    public void findAgents() {
+    private void findAgents() {
         if (composicao != null) {
             composicao.clear();
         }
         addBehaviour(new DiscoverMagistrateAgents(this));
         addBehaviour(new DiscoverProtocolAgents(this));
+    }
+
+    public void requestLawsuit() {
+        if (protocolAgents != null) {
+            addBehaviour(new RequestLawsuit(this, protocolAgents));
+        }
     }
 
 }

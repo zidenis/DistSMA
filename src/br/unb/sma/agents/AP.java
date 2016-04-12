@@ -3,14 +3,17 @@ package br.unb.sma.agents;
 import br.unb.sma.agents.gui.APview;
 import br.unb.sma.behaviors.ObtainLawsuitAwaintingDistribution;
 import br.unb.sma.entities.Processo;
+import br.unb.sma.entities.ProcessoCompleto;
 import br.unb.sma.entities.Protocolo;
 import br.unb.sma.utils.Utils;
 import jade.core.behaviours.CyclicBehaviour;
+import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 
 import static br.unb.sma.database.Tables.T_FASE_PROCESSUAL;
 import static br.unb.sma.database.Tables.T_PROCESSO;
@@ -21,11 +24,10 @@ import static br.unb.sma.database.Tables.T_PROCESSO;
  */
 public class AP extends SMAgent {
 
-    public static final String GET_LAWSUIT = "get-lawsuit";
-    public static final String UPDATE_LAWSUIT_DB = "update-lawsuit-db";
     public static final String SERVICE_TYPE = "AP";
-
-    private final String[] SERVICES = {AP.GET_LAWSUIT, UPDATE_LAWSUIT_DB};
+    public static final String REQUEST_LAWSUIT = "request-lawsuit";
+    public static final String UPDATE_LAWSUIT_DB = "update-lawsuit-db";
+    private final String[] SERVICES = {AP.REQUEST_LAWSUIT, UPDATE_LAWSUIT_DB};
 
     Protocolo protocolo;
     Processo processo;
@@ -79,10 +81,29 @@ public class AP extends SMAgent {
         }
     }
 
+    @Override
     protected void processMessages(ACLMessage msg) {
         super.processMessages(msg);
         switch (msg.getContent()) {
+            case REQUEST_LAWSUIT:
+                processRequestLawsuit(msg);
+                break;
+        }
+    }
 
+    private void processRequestLawsuit(ACLMessage msg) {
+        ProcessoCompleto pc = new ProcessoCompleto(processo, this);
+        ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
+        reply.addReceiver(msg.getSender());
+        Envelope envelope = new Envelope();
+        envelope.setComments(AD.INFORM_LAWSUIT);
+        reply.setEnvelope(envelope);
+        try {
+            reply.setContentObject(pc);
+            send(reply);
+        } catch (IOException e) {
+            Utils.logError(getLocalName() + " : erro ao gerar processo para distribuição");
+            e.printStackTrace();
         }
     }
 

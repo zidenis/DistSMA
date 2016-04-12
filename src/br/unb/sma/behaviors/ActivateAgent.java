@@ -1,11 +1,11 @@
 package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AGP;
+import br.unb.sma.agents.SMAgent;
 import br.unb.sma.utils.AgentEntity;
 import br.unb.sma.utils.Status;
 import br.unb.sma.utils.Utils;
 import jade.content.onto.basic.Action;
-import jade.core.Agent;
 import jade.core.ContainerID;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.FIPANames;
@@ -23,9 +23,11 @@ import javax.swing.*;
 public class ActivateAgent extends OneShotBehaviour {
 
     AgentEntity agentEntity;
+    SMAgent agent;
 
-    public ActivateAgent(Agent agent, AgentEntity agentEntity) {
+    public ActivateAgent(SMAgent agent, AgentEntity agentEntity) {
         super(agent);
+        this.agent = agent;
         this.agentEntity = agentEntity;
     }
 
@@ -44,11 +46,12 @@ public class ActivateAgent extends OneShotBehaviour {
             request.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
             request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             myAgent.getContentManager().fillContent(request, actExpr);
-            myAgent.addBehaviour(new AchieveREInitiator(myAgent, request) {
+            agent.addBehaviour(new AchieveREInitiator(myAgent, request) {
                 @Override
                 protected void handleInform(ACLMessage inform) {
                     agentEntity.setStatus(Status.ATIVADO);
                     SwingUtilities.invokeLater(() -> ((AGP) myAgent).getView().update());
+                    myAgent.addBehaviour(new InformPlataformChange());
                 }
 
                 @Override
@@ -56,8 +59,7 @@ public class ActivateAgent extends OneShotBehaviour {
                     Utils.logError(myAgent.getLocalName() + " - erro ao iniciar o " + agentEntity.getAgentName());
                     Utils.logError(failure.getContent());
                 }
-            });
-
+            }, true);
         } catch (Exception e) {
             Utils.logError(myAgent.getLocalName() + " - erro ao iniciar " + agentEntity.getAgentName());
             e.printStackTrace();

@@ -13,13 +13,11 @@ public class ADview {
     private JPanel panel;
 
     private JPanel form;
-    private JButton findAgentsButton;
     private AD agent;
 
     public ADview(AD agent) {
         this.agent = agent;
         distribuirBtn.addActionListener(event -> distribuir());
-        findAgentsButton.addActionListener(event -> findAgents());
     }
 
     public JPanel getForm() {
@@ -27,10 +25,7 @@ public class ADview {
     }
 
     private void distribuir() {
-
+        agent.requestLawsuit();
     }
 
-    private void findAgents() {
-        agent.findAgents();
-    }
 }

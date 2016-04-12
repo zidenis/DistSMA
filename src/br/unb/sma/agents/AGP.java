@@ -84,9 +84,6 @@ public class AGP extends SMAgent {
     @Override
     protected void processMessages(ACLMessage msg) {
         super.processMessages(msg);
-        switch (msg.getContent()) {
-
-        }
     }
 
     @Override

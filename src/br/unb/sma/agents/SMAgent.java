@@ -96,7 +96,7 @@ public abstract class SMAgent extends Agent {
     public abstract String[] getServices();
 
     protected void processMessages(ACLMessage msg) {
-        Utils.logInfo(getLocalName() + " - mensagem recebida de " + msg.getSender().getLocalName());
+        Utils.logInfo(getLocalName() + " - mensagem recebida de " + msg.getSender().getLocalName() + " : " + ((msg.getEnvelope() != null) ? msg.getEnvelope().getComments() : msg.getContent()));
     }
 
     protected abstract void loadGUI();
@@ -113,5 +113,14 @@ public abstract class SMAgent extends Agent {
     public void addBehaviour(Behaviour b) {
         Utils.logInfo(getLocalName() + " - tarefa iniciada : " + b.getClass().getSimpleName());
         super.addBehaviour(b);
+    }
+
+    public void addBehaviour(Behaviour b, boolean doNotLog) {
+        if (doNotLog) {
+            super.addBehaviour(b);
+        } else {
+            addBehaviour(b);
+        }
+
     }
 }

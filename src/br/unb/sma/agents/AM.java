@@ -27,10 +27,9 @@ import static br.unb.sma.database.Tables.T_HIST_DISTRIBUICAO;
  */
 public class AM extends SMAgent {
 
-    public static final String GET_COMPOSITION = "get-composition";
     public static final String SERVICE_TYPE = "AM";
-
-    private final String[] SERVICES = {AM.GET_COMPOSITION};
+    public static final String REQUEST_COMPOSITION = "request-composition";
+    private final String[] SERVICES = {AM.REQUEST_COMPOSITION};
 
     Magistrado magistrado;
     List<ComposicaoOj> composicaoOjList;
@@ -49,24 +48,30 @@ public class AM extends SMAgent {
         addBehaviour(new ObtainImpediments(agent));
     }
 
+    @Override
     protected void processMessages(ACLMessage msg) {
         super.processMessages(msg);
         switch (msg.getContent()) {
-            case GET_COMPOSITION:
-                ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-                reply.addReceiver(msg.getSender());
-                Envelope envelope = new Envelope();
-                envelope.setComments(AD.INFORM_COMPOSTION);
-                reply.setEnvelope(envelope);
-                try {
-                    reply.setContentObject((Serializable) composicaoOjList);
-                    send(reply);
-                } catch (IOException e) {
-                    Utils.logError(getLocalName() + " : erro ao definir composição de magistrado");
-                }
+            case REQUEST_COMPOSITION:
+                processRequestComposition(msg);
                 break;
         }
     }
+
+    private void processRequestComposition(ACLMessage msg) {
+        ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
+        reply.addReceiver(msg.getSender());
+        Envelope envelope = new Envelope();
+        envelope.setComments(AD.INFORM_COMPOSTION);
+        reply.setEnvelope(envelope);
+        try {
+            reply.setContentObject((Serializable) composicaoOjList);
+            send(reply);
+        } catch (IOException e) {
+            Utils.logError(getLocalName() + " : erro ao definir composição de magistrado");
+        }
+    }
+
 
     @Override
     protected void loadGUI() {

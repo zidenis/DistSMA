@@ -23,7 +23,7 @@ public class RequestOJComposition extends OneShotBehaviour {
     @Override
     public void action() {
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-        msg.setContent(AM.GET_COMPOSITION);
+        msg.setContent(AM.REQUEST_COMPOSITION);
         for (DFAgentDescription dfd : magistrateAgents) {
             msg.addReceiver(dfd.getName());
         }

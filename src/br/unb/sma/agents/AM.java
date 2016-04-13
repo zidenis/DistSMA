@@ -3,8 +3,7 @@ package br.unb.sma.agents;
 import br.unb.sma.agents.gui.AMview;
 import br.unb.sma.behaviors.ObtainImpediments;
 import br.unb.sma.behaviors.ObtainOJComposition;
-import br.unb.sma.entities.ComposicaoOj;
-import br.unb.sma.entities.Magistrado;
+import br.unb.sma.entities.*;
 import br.unb.sma.utils.Utils;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPAAgentManagement.Envelope;
@@ -29,6 +28,7 @@ public class AM extends SMAgent {
 
     public static final String SERVICE_TYPE = "AM";
     public static final String REQUEST_COMPOSITION = "request-composition";
+    public static final String QUERY_IF_IMPEDIMENT = "query-if-impediment";
     private final String[] SERVICES = {AM.REQUEST_COMPOSITION};
 
     Magistrado magistrado;
@@ -51,9 +51,12 @@ public class AM extends SMAgent {
     @Override
     protected void processMessages(ACLMessage msg) {
         super.processMessages(msg);
-        switch (msg.getContent()) {
+        switch (msg.getEnvelope().getComments()) {
             case REQUEST_COMPOSITION:
                 processRequestComposition(msg);
+                break;
+            case QUERY_IF_IMPEDIMENT:
+                processQueryIfImpediment(msg);
                 break;
         }
     }
@@ -72,6 +75,44 @@ public class AM extends SMAgent {
         }
     }
 
+    private void processQueryIfImpediment(ACLMessage msg) {
+        try {
+            ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
+            boolean impedido = false;
+            StringBuilder razaoImpedimento = new StringBuilder();
+            // MA declarou-se impedido para julgar o processo determinado
+            if (impedimentosProcessos.contains(pc.getProcesso().getCodProcesso())) {
+                razaoImpedimento.append(getLocalName()).append(" impedido para julgar processo ").append(pc.getProcesso().toString()).append(" ");
+                impedido = true;
+            }
+            for (Parte parte : pc.getPartes()) {
+                if (impedimentosPartes.contains(parte.getCodParte())) {
+                    razaoImpedimento.append(getLocalName()).append(" impedido para julgar processo em que figura a parte ").append(parte.getNomParte()).append(" ");
+                    impedido = true;
+                }
+            }
+            for (Advogado adv : pc.getAdvogados()) {
+                if (impedimentosAdvogados.contains(adv.getNumAdvogado())) {
+                    razaoImpedimento.append(getLocalName()).append(" impedido para julgar processo em que figura o advogado ").append(adv.getNomAdvogado()).append(" ");
+                    impedido = true;
+                }
+            }
+            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
+            reply.addReceiver(msg.getSender());
+            Envelope envelope = new Envelope();
+            if (impedido) {
+                envelope.setComments(AD.INFORM_IMPEDIMENT);
+                reply.addUserDefinedParameter("razao", razaoImpedimento.toString());
+            } else {
+                envelope.setComments(AD.INFORM_COMPETENCE);
+            }
+            reply.setEnvelope(envelope);
+            reply.setContentObject(pc);
+            send(reply);
+        } catch (Exception e) {
+            Utils.logError(getLocalName() + " : erro ao processar impedimentos em processo");
+        }
+    }
 
     @Override
     protected void loadGUI() {
@@ -178,7 +219,6 @@ public class AM extends SMAgent {
     public String toString() {
         return getLocalName() + " (" + getAgentState().toString() + ")";
     }
-
 
     @Override
     public String getServiceType() {

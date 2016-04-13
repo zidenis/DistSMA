@@ -84,7 +84,7 @@ public class AP extends SMAgent {
     @Override
     protected void processMessages(ACLMessage msg) {
         super.processMessages(msg);
-        switch (msg.getContent()) {
+        switch (msg.getEnvelope().getComments()) {
             case REQUEST_LAWSUIT:
                 processRequestLawsuit(msg);
                 break;

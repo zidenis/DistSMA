@@ -96,7 +96,7 @@ public abstract class SMAgent extends Agent {
     public abstract String[] getServices();
 
     protected void processMessages(ACLMessage msg) {
-        Utils.logInfo(getLocalName() + " - mensagem recebida de " + msg.getSender().getLocalName() + " : " + ((msg.getEnvelope() != null) ? msg.getEnvelope().getComments() : msg.getContent()));
+        Utils.logInfo(getLocalName() + " - mensagem recebida de " + msg.getSender().getLocalName() + " : " + msg.getEnvelope().getComments());
     }
 
     protected abstract void loadGUI();

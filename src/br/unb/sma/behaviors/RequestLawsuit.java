@@ -4,6 +4,7 @@ import br.unb.sma.agents.AD;
 import br.unb.sma.agents.AP;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
 
 /**
@@ -23,7 +24,9 @@ public class RequestLawsuit extends OneShotBehaviour {
     @Override
     public void action() {
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
-        msg.setContent(AP.REQUEST_LAWSUIT);
+        Envelope envelope = new Envelope();
+        envelope.setComments(AP.REQUEST_LAWSUIT);
+        msg.setEnvelope(envelope);
         for (DFAgentDescription dfd : protocolAgents) {
             msg.addReceiver(dfd.getName());
         }

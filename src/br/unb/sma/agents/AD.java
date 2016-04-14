@@ -2,8 +2,7 @@ package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.ADview;
 import br.unb.sma.behaviors.*;
-import br.unb.sma.entities.ComposicaoOj;
-import br.unb.sma.entities.ProcessoCompleto;
+import br.unb.sma.entities.*;
 import br.unb.sma.utils.Utils;
 import jade.core.AID;
 import jade.core.behaviours.CyclicBehaviour;
@@ -14,8 +13,12 @@ import jade.lang.acl.UnreadableException;
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.Timer;
+
+import static br.unb.sma.database.Tables.T_HIST_DISTRIBUICAO;
 
 /**
  * Created by zidenis.
@@ -32,6 +35,8 @@ public class AD extends SMAgent {
     public static final String INFORM_COMPETENCE = "inform-competence";
     private final String[] SERVICES = {DISTRIBUTE};
     boolean findAgentsMutex = false;
+    private Distribuidor distribuidor;
+    private Integer seqDistribuicao;
     private JFrame gui;
     private AD agent = this;
     private ADview view;
@@ -40,14 +45,32 @@ public class AD extends SMAgent {
     private DFAgentDescription[] magistrateAgents;
     private Map<String, Set<AID>> composicao; // "Órgão Judicante" -> {Agentes Magistrados}
     private Map<Long, Set<String>> magistradosQuestionados = new HashMap<>(); // "Código do Processo" -> {Magistrados}
-    private Map<Long, Set<String>> magistradosImpedidos = new HashMap<>();
-    private Map<Long, Set<String>> magistradosCompetentes = new HashMap<>();
+    private Map<Long, Set<String>> magistradosImpedidos = new HashMap<>(); // "Código do Processo" -> {Magistrados}
+    private Map<Long, Set<String>> magistradosCompetentes = new HashMap<>(); // "Código do Processo" -> {Magistrados}
+    private Map<Long, AID> protocoloResponsavel = new HashMap<>(); // "Código do Processo" -> Agente Protocolo
 
     @Override
     protected void setup() {
+        distribuidor = (Distribuidor) getArguments()[0];
         super.setup();
+        seqDistribuicao = getNextSeqDistribuicaoFromDB();
         addBehaviour(new ObtainOJCompetencies(this));
         if (composicao == null) findAgents();
+    }
+
+    private Integer getNextSeqDistribuicaoFromDB() {
+        /*
+        SELECT max(seq_distribuicao)
+        FROM t_hist_distribuicao
+        WHERE cod_distribuidor = 'AD01'
+         */
+        Integer actualSeq = getDbDSL()
+                .select(T_HIST_DISTRIBUICAO.SEQ_DISTRIBUICAO.max())
+                .from(T_HIST_DISTRIBUICAO)
+                .where(T_HIST_DISTRIBUICAO.COD_DISTRIBUIDOR.equal(distribuidor.getCodDistribuidor()))
+                .fetchOne().value1();
+        if (actualSeq == null) actualSeq = 0;
+        return ++actualSeq;
     }
 
     @Override
@@ -76,7 +99,7 @@ public class AD extends SMAgent {
                 processInformLawsuit(msg);
                 break;
             case INFORM_PLATAFORM_CHANGE:
-                informPlataformChange();
+                processInformPlataformChange();
                 break;
             case INFORM_IMPEDIMENT:
                 processInformImpediment(msg, true);
@@ -111,18 +134,92 @@ public class AD extends SMAgent {
     private void processInformLawsuit(ACLMessage msg) {
         try {
             ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
-            Set<String> magistradosDisponiveis = new HashSet<>();
-            for (DFAgentDescription dfd : magistrateAgents) {
-                magistradosDisponiveis.add(dfd.getName().getLocalName());
+            protocoloResponsavel.put(pc.getProcesso().getCodProcesso(), msg.getSender());
+            if (hasRelatedDistribution(pc)) {
+                requestAplicationOfDistribution(buildRelatedDistribution(pc), msg.getSender());
+            } else {
+                Set<String> magistradosDisponiveis = new HashSet<>();
+                for (DFAgentDescription dfd : magistrateAgents) {
+                    magistradosDisponiveis.add(dfd.getName().getLocalName());
+                }
+                magistradosQuestionados.put(pc.getProcesso().getCodProcesso(), magistradosDisponiveis);
+                addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents));
             }
-            magistradosQuestionados.put(pc.getProcesso().getCodProcesso(), magistradosDisponiveis);
-            addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents));
         } catch (UnreadableException e) {
             Utils.logError(getLocalName() + " : erro no Processo recebido de " + msg.getSender().getLocalName());
         }
     }
 
-    private void informPlataformChange() {
+    private HistDistribuicao buildRelatedDistribution(ProcessoCompleto pc) {
+        LocalDate now = LocalDate.now();
+        String codMagistrado = null;
+        String sigOJ = null;
+        String razaoDistribuicao = null;
+        String tipoDistribuicao = null;
+        if (pc.getFaseAnterior() != null) {
+            if (!pc.getFaseAnterior().getCodMagistrado().equals("null")) {
+                codMagistrado = pc.getFaseAnterior().getCodMagistrado();
+                sigOJ = pc.getFaseAnterior().getSigOj();
+                tipoDistribuicao = "P";
+                razaoDistribuicao = "Processo já distribuído ao magistrado em fase anterior";
+            }
+        } else {
+            if (pc.getFasesAntProcRel() != null) {
+                for (FaseProcessual fp : pc.getFasesAntProcRel()) {
+                    if (!fp.getCodMagistrado().equals("null")) {
+                        codMagistrado = fp.getCodMagistrado();
+                        sigOJ = fp.getSigOj();
+                        tipoDistribuicao = "D";
+                        razaoDistribuicao = "Distribuído ao mesmo magistrado do processo relacionado de código: " + fp.getCodProcesso();
+                    }
+                }
+            } else {
+                if (pc.getFasesAtuProcRel() != null) {
+                    for (FaseProcessual fp : pc.getFasesAtuProcRel()) {
+                        if (!fp.getCodMagistrado().equals("null")) {
+                            codMagistrado = fp.getCodMagistrado();
+                            sigOJ = fp.getSigOj();
+                            tipoDistribuicao = "D";
+                            razaoDistribuicao = "Distribuído ao mesmo magistrado do processo relacionado de código: " + fp.getCodProcesso();
+                        }
+                    }
+                }
+            }
+        }
+        return new HistDistribuicao(
+                distribuidor.getCodDistribuidor(),
+                seqDistribuicao++,
+                pc.getProcesso().getCodProcesso(),
+                tipoDistribuicao,
+                Date.valueOf(now),
+                codMagistrado,
+                razaoDistribuicao,
+                sigOJ
+        );
+    }
+
+    private boolean hasRelatedDistribution(ProcessoCompleto pc) {
+        if (pc.getFaseAnterior() != null) {
+            if (!pc.getFaseAnterior().getCodMagistrado().equals("null")) {
+                return true;
+            }
+        } else {
+            if (pc.getFasesAntProcRel() != null) {
+                for (FaseProcessual fp : pc.getFasesAntProcRel()) {
+                    if (!fp.getCodMagistrado().equals("null")) return true;
+                }
+            } else {
+                if (pc.getFasesAtuProcRel() != null) {
+                    for (FaseProcessual fp : pc.getFasesAtuProcRel()) {
+                        if (!fp.getCodMagistrado().equals("null")) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private void processInformPlataformChange() {
         if (findAgentsMutex) {
             findAgentsMutex = false;
             Timer time = new Timer();
@@ -160,15 +257,21 @@ public class AD extends SMAgent {
                 }
             }
             if (magistradosQuestionados.get(codProcesso).size() == 0) {
-                performDistribution(pc);
+                //TODO Construir distribuição
+                HistDistribuicao distribuicao = null;
+                AID protocolAgentReceiver = protocoloResponsavel.get(codProcesso);
+                requestAplicationOfDistribution(distribuicao, protocolAgentReceiver);
             }
         } catch (UnreadableException e) {
             Utils.logError(getLocalName() + " : erro ao processar informação de impedimento de " + msg.getSender().getLocalName());
         }
     }
 
-    private void performDistribution(ProcessoCompleto pc) {
-        Utils.logInfo(getLocalName() + " aplicar regras de distribuição em " + pc.getProcesso());
+    private void requestAplicationOfDistribution(HistDistribuicao distribuicao, AID protocolAgentReceiver) {
+        Utils.logInfo(getLocalName() + " Distribuir para " + protocolAgentReceiver.getLocalName() + ": " + distribuicao);
+        if (distribuicao != null) {
+            addBehaviour(new UpdateDistributionDB(this, distribuicao));
+        }
     }
 
     protected void loadGUI() {

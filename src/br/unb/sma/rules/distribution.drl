@@ -1,0 +1,57 @@
+package br.unb.sma.rules;
+
+import br.unb.sma.entities.ProcessoCompleto;
+import br.unb.sma.entities.FaseProcessual;
+import br.unb.sma.entities.HistDistribuicao;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+
+dialect  "mvel"
+
+rule "Distribuição por prevenção para processos que já foram anteriormente distribuídos para um Magistrado"
+activation-group "mutex"
+    when
+        $pc : ProcessoCompleto(faseAnterior != null)
+        $distribuicao : HistDistribuicao()
+    then
+        LocalDateTime now = LocalDateTime.now();
+        $distribuicao.setCodProcesso($pc.getProcesso().getCodProcesso());
+        $distribuicao.setCodTipoDist("P");
+        $distribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
+        $distribuicao.setCodMagistrado($pc.getFaseAnterior().getCodMagistrado());
+        $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
+        $distribuicao.setTxtDistribuicao("lawsuit previusly distributed on its phase " + $pc.getFaseAnterior().getSigClasse());
+        $distribuicao.setSigOj($pc.getFaseAnterior().getSigOj());
+end
+
+rule "Distribuição por dependência para processos que estão relacionados a outros processos já distribuídos"
+activation-group "mutex"
+    when
+        $pc : ProcessoCompleto(faseAnterior == null, fasesProcRel != null, $fasesAtu : fasesProcRel)
+        $fase : FaseProcessual(codMagistrado != null) from $fasesAtu
+        $distribuicao : HistDistribuicao()
+    then
+        LocalDateTime now = LocalDateTime.now();
+        $distribuicao.setCodProcesso($pc.getProcesso().getCodProcesso());
+        $distribuicao.setCodTipoDist("D");
+        $distribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
+        $distribuicao.setCodMagistrado($fase.getCodMagistrado());
+        $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
+        $distribuicao.setTxtDistribuicao("Código do processo relacionado: " + $fase.getCodProcesso());
+        $distribuicao.setSigOj($fase.getSigOj());
+end
+
+rule "Ausência de regra específica para a distribuição"
+activation-group "mutex"
+salience -1000
+    when
+        $pc : ProcessoCompleto()
+        $distribuicao : HistDistribuicao()
+    then
+        LocalDateTime now = LocalDateTime.now();
+        $distribuicao.setCodProcesso($pc.getProcesso().getCodProcesso());
+        $distribuicao.setCodTipoDist("C");
+        $distribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
+        $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
+        $distribuicao.setTxtDistribuicao($pc.toString());
+end

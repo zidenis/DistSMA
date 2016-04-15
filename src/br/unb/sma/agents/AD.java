@@ -9,12 +9,19 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
+import org.kie.api.io.ResourceType;
+import org.kie.internal.KnowledgeBase;
+import org.kie.internal.KnowledgeBaseFactory;
+import org.kie.internal.builder.KnowledgeBuilder;
+import org.kie.internal.builder.KnowledgeBuilderError;
+import org.kie.internal.builder.KnowledgeBuilderErrors;
+import org.kie.internal.builder.KnowledgeBuilderFactory;
+import org.kie.internal.io.ResourceFactory;
+import org.kie.internal.runtime.StatefulKnowledgeSession;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.sql.Date;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.Timer;
 
@@ -49,6 +56,20 @@ public class AD extends SMAgent {
     private Map<Long, Set<String>> magistradosCompetentes = new HashMap<>(); // "Código do Processo" -> {Magistrados}
     private Map<Long, AID> protocoloResponsavel = new HashMap<>(); // "Código do Processo" -> Agente Protocolo
 
+    private static KnowledgeBase buildDroolsKnowledgeBase() {
+        KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
+        kbuilder.add(ResourceFactory.newClassPathResource("br/unb/sma/rules/Distribution.drl"), ResourceType.DRL);
+        KnowledgeBuilderErrors errors = kbuilder.getErrors();
+        if (errors.size() > 0) {
+            for (KnowledgeBuilderError error : errors) {
+                Utils.logError(error.toString());
+            }
+        }
+        KnowledgeBase kbase = KnowledgeBaseFactory.newKnowledgeBase();
+        kbase.addKnowledgePackages(kbuilder.getKnowledgePackages());
+        return kbase;
+    }
+
     @Override
     protected void setup() {
         distribuidor = (Distribuidor) getArguments()[0];
@@ -70,7 +91,7 @@ public class AD extends SMAgent {
                 .where(T_HIST_DISTRIBUICAO.COD_DISTRIBUIDOR.equal(distribuidor.getCodDistribuidor()))
                 .fetchOne().value1();
         if (actualSeq == null) actualSeq = 0;
-        return ++actualSeq;
+        return actualSeq + 1;
     }
 
     @Override
@@ -136,7 +157,8 @@ public class AD extends SMAgent {
             ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
             protocoloResponsavel.put(pc.getProcesso().getCodProcesso(), msg.getSender());
             if (hasRelatedDistribution(pc)) {
-                requestAplicationOfDistribution(buildRelatedDistribution(pc), msg.getSender());
+                HistDistribuicao distribuicao = applyDistributionRules(pc);
+                requestAplicationOfDistribution(distribuicao, msg.getSender());
             } else {
                 Set<String> magistradosDisponiveis = new HashSet<>();
                 for (DFAgentDescription dfd : magistrateAgents) {
@@ -150,52 +172,17 @@ public class AD extends SMAgent {
         }
     }
 
-    private HistDistribuicao buildRelatedDistribution(ProcessoCompleto pc) {
-        LocalDate now = LocalDate.now();
-        String codMagistrado = null;
-        String sigOJ = null;
-        String razaoDistribuicao = null;
-        String tipoDistribuicao = null;
-        if (pc.getFaseAnterior() != null) {
-            if (!pc.getFaseAnterior().getCodMagistrado().equals("null")) {
-                codMagistrado = pc.getFaseAnterior().getCodMagistrado();
-                sigOJ = pc.getFaseAnterior().getSigOj();
-                tipoDistribuicao = "P";
-                razaoDistribuicao = "Processo já distribuído ao magistrado em fase anterior";
-            }
-        } else {
-            if (pc.getFasesAntProcRel() != null) {
-                for (FaseProcessual fp : pc.getFasesAntProcRel()) {
-                    if (!fp.getCodMagistrado().equals("null")) {
-                        codMagistrado = fp.getCodMagistrado();
-                        sigOJ = fp.getSigOj();
-                        tipoDistribuicao = "D";
-                        razaoDistribuicao = "Distribuído ao mesmo magistrado do processo relacionado de código: " + fp.getCodProcesso();
-                    }
-                }
-            } else {
-                if (pc.getFasesAtuProcRel() != null) {
-                    for (FaseProcessual fp : pc.getFasesAtuProcRel()) {
-                        if (!fp.getCodMagistrado().equals("null")) {
-                            codMagistrado = fp.getCodMagistrado();
-                            sigOJ = fp.getSigOj();
-                            tipoDistribuicao = "D";
-                            razaoDistribuicao = "Distribuído ao mesmo magistrado do processo relacionado de código: " + fp.getCodProcesso();
-                        }
-                    }
-                }
-            }
-        }
-        return new HistDistribuicao(
-                distribuidor.getCodDistribuidor(),
-                seqDistribuicao++,
-                pc.getProcesso().getCodProcesso(),
-                tipoDistribuicao,
-                Date.valueOf(now),
-                codMagistrado,
-                razaoDistribuicao,
-                sigOJ
-        );
+    private HistDistribuicao applyDistributionRules(ProcessoCompleto pc) {
+        KnowledgeBase kbase = buildDroolsKnowledgeBase();
+        StatefulKnowledgeSession ksession = kbase.newStatefulKnowledgeSession();
+        HistDistribuicao distribuicao = new HistDistribuicao();
+        distribuicao.setCodDistribuidor(distribuidor.getCodDistribuidor());
+        distribuicao.setSeqDistribuicao(seqDistribuicao++);
+        ksession.insert(distribuicao);
+        ksession.insert(pc);
+        ksession.fireAllRules();
+        ksession.dispose();
+        return distribuicao;
     }
 
     private boolean hasRelatedDistribution(ProcessoCompleto pc) {
@@ -203,17 +190,9 @@ public class AD extends SMAgent {
             if (!pc.getFaseAnterior().getCodMagistrado().equals("null")) {
                 return true;
             }
-        } else {
-            if (pc.getFasesAntProcRel() != null) {
-                for (FaseProcessual fp : pc.getFasesAntProcRel()) {
-                    if (!fp.getCodMagistrado().equals("null")) return true;
-                }
-            } else {
-                if (pc.getFasesAtuProcRel() != null) {
-                    for (FaseProcessual fp : pc.getFasesAtuProcRel()) {
-                        if (!fp.getCodMagistrado().equals("null")) return true;
-                    }
-                }
+        } else if (pc.getFasesProcRel() != null) {
+            for (FaseProcessual fp : pc.getFasesProcRel()) {
+                if (!fp.getCodMagistrado().equals("null")) return true;
             }
         }
         return false;
@@ -257,8 +236,7 @@ public class AD extends SMAgent {
                 }
             }
             if (magistradosQuestionados.get(codProcesso).size() == 0) {
-                //TODO Construir distribuição
-                HistDistribuicao distribuicao = null;
+                HistDistribuicao distribuicao = applyDistributionRules(pc);
                 AID protocolAgentReceiver = protocoloResponsavel.get(codProcesso);
                 requestAplicationOfDistribution(distribuicao, protocolAgentReceiver);
             }
@@ -269,9 +247,9 @@ public class AD extends SMAgent {
 
     private void requestAplicationOfDistribution(HistDistribuicao distribuicao, AID protocolAgentReceiver) {
         Utils.logInfo(getLocalName() + " Distribuir para " + protocolAgentReceiver.getLocalName() + ": " + distribuicao);
-        if (distribuicao != null) {
-            addBehaviour(new UpdateDistributionDB(this, distribuicao));
-        }
+//        if (distribuicao != null) {
+//            addBehaviour(new UpdateDistributionDB(this, distribuicao));
+//        }
     }
 
     protected void loadGUI() {

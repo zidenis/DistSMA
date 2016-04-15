@@ -24,8 +24,7 @@ public class ProcessoCompleto implements Serializable {
     private List<Procurador> procuradores;
     private FaseProcessual faseAtual;
     private FaseProcessual faseAnterior;
-    private List<FaseProcessual> fasesAtuProcRel;
-    private List<FaseProcessual> fasesAntProcRel;
+    private List<FaseProcessual> fasesProcRel;
 
     public ProcessoCompleto(Processo processo, SMAgent agent) {
         this.processo = processo;
@@ -143,8 +142,7 @@ public class ProcessoCompleto implements Serializable {
                 .or(pr.COD_PROCESSO_REL.equal(codProc))
                 .fetchInto(ProcessoRelacionado.class);
         if (processosRelacionados.size() > 0) {
-            fasesAtuProcRel = new ArrayList<>();
-            fasesAntProcRel = new ArrayList<>();
+            fasesProcRel = new ArrayList<>();
             for (ProcessoRelacionado procRel : processosRelacionados) {
                 Long codProcRel;
                 if (procRel.getCodProcesso() == codProc) {
@@ -160,16 +158,7 @@ public class ProcessoCompleto implements Serializable {
                         .orderBy(fp.DTA_INICIO_FASE.desc())
                         .limit(1)
                         .fetchOneInto(FaseProcessual.class);
-                fasesAtuProcRel.add(faseAtualProcRel);
-                FaseProcessual faseAnteriorProcRel = agent.getDbDSL()
-                        .select()
-                        .from(fp)
-                        .where(fp.COD_PROCESSO.equal(codProcRel))
-                        .and(fp.DTA_TERMINO_FASE.isNotNull())
-                        .orderBy(fp.DTA_INICIO_FASE.desc())
-                        .limit(1)
-                        .fetchOneInto(FaseProcessual.class);
-                fasesAntProcRel.add(faseAnteriorProcRel);
+                fasesProcRel.add(faseAtualProcRel);
             }
         }
     }
@@ -183,8 +172,7 @@ public class ProcessoCompleto implements Serializable {
                         "\n procuradores=" + procuradores +
                         "\n faseAtual=" + faseAtual +
                         "\n faseAnterior=" + faseAnterior +
-                        "\n fasesAtuProcRel=" + fasesAtuProcRel +
-                        "\n fasesAntProcRel=" + fasesAntProcRel;
+                        "\n fasesProcRel=" + fasesProcRel;
     }
 
     public Processo getProcesso() {
@@ -215,11 +203,8 @@ public class ProcessoCompleto implements Serializable {
         return faseAnterior;
     }
 
-    public List<FaseProcessual> getFasesAtuProcRel() {
-        return fasesAtuProcRel;
+    public List<FaseProcessual> getFasesProcRel() {
+        return fasesProcRel;
     }
 
-    public List<FaseProcessual> getFasesAntProcRel() {
-        return fasesAntProcRel;
-    }
 }

@@ -6,7 +6,7 @@ package br.unb.sma.entities;
 
 import javax.annotation.Generated;
 import java.io.Serializable;
-import java.sql.Date;
+import java.sql.Timestamp;
 
 
 /**
@@ -28,10 +28,11 @@ public class HistDistribuicao implements Serializable {
     private Integer seqDistribuicao;
     private Long codProcesso;
     private String codTipoDist;
-    private Date dtaDistribuicao;
+    private Timestamp dtaDistribuicao;
     private String codMagistrado;
     private String txtDistribuicao;
     private String sigOj;
+    private String txtRegraAplicada;
 
     public HistDistribuicao() {
     }
@@ -45,6 +46,7 @@ public class HistDistribuicao implements Serializable {
         this.codMagistrado = value.codMagistrado;
         this.txtDistribuicao = value.txtDistribuicao;
         this.sigOj = value.sigOj;
+        this.txtRegraAplicada = value.txtRegraAplicada;
     }
 
     public HistDistribuicao(
@@ -52,10 +54,11 @@ public class HistDistribuicao implements Serializable {
             Integer seqDistribuicao,
             Long codProcesso,
             String codTipoDist,
-            Date dtaDistribuicao,
+            Timestamp dtaDistribuicao,
             String codMagistrado,
             String txtDistribuicao,
-            String sigOj
+            String sigOj,
+            String txtRegraAplicada
     ) {
         this.codDistribuidor = codDistribuidor;
         this.seqDistribuicao = seqDistribuicao;
@@ -65,6 +68,7 @@ public class HistDistribuicao implements Serializable {
         this.codMagistrado = codMagistrado;
         this.txtDistribuicao = txtDistribuicao;
         this.sigOj = sigOj;
+        this.txtRegraAplicada = txtRegraAplicada;
     }
 
     public String getCodDistribuidor() {
@@ -99,11 +103,11 @@ public class HistDistribuicao implements Serializable {
         this.codTipoDist = codTipoDist;
     }
 
-    public Date getDtaDistribuicao() {
+    public Timestamp getDtaDistribuicao() {
         return this.dtaDistribuicao;
     }
 
-    public void setDtaDistribuicao(Date dtaDistribuicao) {
+    public void setDtaDistribuicao(Timestamp dtaDistribuicao) {
         this.dtaDistribuicao = dtaDistribuicao;
     }
 
@@ -131,6 +135,14 @@ public class HistDistribuicao implements Serializable {
         this.sigOj = sigOj;
     }
 
+    public String getTxtRegraAplicada() {
+        return txtRegraAplicada;
+    }
+
+    public void setTxtRegraAplicada(String txtRegraAplicada) {
+        this.txtRegraAplicada = txtRegraAplicada;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("HistDistribuicao (");
@@ -141,6 +153,7 @@ public class HistDistribuicao implements Serializable {
         sb.append(", ").append(codTipoDist);
         sb.append(", ").append(dtaDistribuicao);
         sb.append(", ").append(codMagistrado);
+        sb.append(", ").append(txtRegraAplicada);
         sb.append(", ").append(txtDistribuicao);
         sb.append(", ").append(sigOj);
 

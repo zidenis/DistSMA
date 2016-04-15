@@ -8,10 +8,11 @@ import br.unb.sma.database.Keys;
 import br.unb.sma.database.Procjud;
 import br.unb.sma.database.tables.records.THistDistribuicaoRecord;
 import org.jooq.*;
+import org.jooq.impl.SQLDataType;
 import org.jooq.impl.TableImpl;
 
 import javax.annotation.Generated;
-import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class THistDistribuicao extends TableImpl<THistDistribuicaoRecord> {
     /**
      * The column <code>procjud.t_hist_distribuicao.dta_distribuicao</code>. Data de realizacao da distribuicao do processo
      */
-    public final TableField<THistDistribuicaoRecord, Date> DTA_DISTRIBUICAO = createField("dta_distribuicao", org.jooq.impl.SQLDataType.DATE.nullable(false), this, "Data de realizacao da distribuicao do processo");
+    public final TableField<THistDistribuicaoRecord, Timestamp> DTA_DISTRIBUICAO = createField("dta_distribuicao", SQLDataType.TIMESTAMP.nullable(false), this, "Data de realizacao da distribuicao do processo");
     /**
      * The column <code>procjud.t_hist_distribuicao.cod_magistrado</code>. Codigo Identificador do Magistrado para qual o processo foi distribuido
      */
@@ -66,6 +67,8 @@ public class THistDistribuicao extends TableImpl<THistDistribuicaoRecord> {
      * The column <code>procjud.t_hist_distribuicao.sig_oj</code>.
      */
     public final TableField<THistDistribuicaoRecord, String> SIG_OJ = createField("sig_oj", org.jooq.impl.SQLDataType.VARCHAR.length(8).nullable(false), this, "");
+
+    public final TableField<THistDistribuicaoRecord, String> TXT_REGRA_APLICADA = createField("txt_regra_aplicada", org.jooq.impl.SQLDataType.VARCHAR.length(256).nullable(false), this, "Regra aplicada para a distribuição do processo");
 
     /**
      * Create a <code>procjud.t_hist_distribuicao</code> table reference

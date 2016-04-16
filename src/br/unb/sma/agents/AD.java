@@ -52,8 +52,7 @@ public class AD extends SMAgent {
     private DFAgentDescription[] protocolAgents;
     private DFAgentDescription[] magistrateAgents;
     private Map<Long, Set<String>> magistradosQuestionados = new HashMap<>(); // "Código do Processo" -> {Magistrados}
-    private Map<Long, Set<String>> magistradosImpedidos = new HashMap<>(); // "Código do Processo" -> {Magistrados}
-    private Map<Long, Set<String>> magistradosCompetentes = new HashMap<>(); // "Código do Processo" -> {Magistrados}
+    private Map<Long, Set<Impedimento>> impedimentos = new HashMap<>(); // "Código do Processo" -> {Impedimentos}
     private Map<Long, AID> protocoloResponsavel = new HashMap<>(); // "Código do Processo" -> Agente Protocolo
 
     private static KnowledgeBase buildDroolsKnowledgeBase() {
@@ -183,8 +182,11 @@ public class AD extends SMAgent {
                 ksession.insert(composicaoOj);
             }
         }
-        Percepcoes percepcoes = new Percepcoes(magistradosImpedidos, magistradosCompetentes);
-        ksession.insert(percepcoes);
+        if (impedimentos.get(pc.getProcesso().getCodProcesso()) != null) {
+            for (Impedimento impedimento : impedimentos.get(pc.getProcesso().getCodProcesso())) {
+                ksession.insert(impedimento);
+            }
+        }
         ksession.fireAllRules();
         ksession.dispose();
         return distribuicao;
@@ -223,21 +225,13 @@ public class AD extends SMAgent {
             Long codProcesso = pc.getProcesso().getCodProcesso();
             magistradosQuestionados.get(codProcesso).remove(magistrado);
             if (impedido) {
-                if (magistradosImpedidos.get(codProcesso) == null) {
-                    Set<String> magistradosImpedidosSet = new HashSet<>();
-                    magistradosImpedidosSet.add(magistrado);
-                    magistradosImpedidos.put(codProcesso, magistradosImpedidosSet);
+                Impedimento impedimento = new Impedimento(magistrado, msg.getUserDefinedParameter("tipo"), msg.getUserDefinedParameter("detalhamento"));
+                if (impedimentos.get(codProcesso) == null) {
+                    Set<Impedimento> impedimentosSet = new HashSet<>();
+                    impedimentosSet.add(impedimento);
+                    impedimentos.put(codProcesso, impedimentosSet);
                 } else {
-                    magistradosImpedidos.get(codProcesso).add(magistrado);
-                }
-                Utils.logInfo(msg.getUserDefinedParameter("razao"));
-            } else {
-                if (magistradosCompetentes.get(codProcesso) == null) {
-                    Set<String> magistradosCompetentesSet = new HashSet<>();
-                    magistradosCompetentesSet.add(magistrado);
-                    magistradosCompetentes.put(codProcesso, magistradosCompetentesSet);
-                } else {
-                    magistradosCompetentes.get(codProcesso).add(magistrado);
+                    impedimentos.get(codProcesso).add(impedimento);
                 }
             }
             if (magistradosQuestionados.get(codProcesso).size() == 0) {

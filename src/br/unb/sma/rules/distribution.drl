@@ -3,17 +3,16 @@ package br.unb.sma.rules;
 import br.unb.sma.entities.ProcessoCompleto;
 import br.unb.sma.entities.FaseProcessual;
 import br.unb.sma.entities.HistDistribuicao;
-import br.unb.sma.entities.Percepcoes;
 import br.unb.sma.entities.Competencia;
 import br.unb.sma.entities.ComposicaoOj;
 import br.unb.sma.entities.Sorteio;
+import br.unb.sma.entities.Impedimento;
+
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.ArrayList;
 
 dialect  "java"
@@ -56,7 +55,8 @@ activation-group "mutex"
     when
         $pc : ProcessoCompleto(faseAnterior == null, fasesProcRel == null, faseAtual != null, $classe : faseAtual.sigClasse)
         $listSigOJsCompetentes : List() from accumulate(Competencia(sigClasse == $classe, $sigOJ : sigOj), collectList($sigOJ))
-        $composicoesOJs : List() from collect(ComposicaoOj(sigOj memberOf $listSigOJsCompetentes))
+        $listComposicoesOJs : List() from collect(ComposicaoOj(sigOj memberOf $listSigOJsCompetentes))
+        $magsImpedidos : Set() from accumulate(Impedimento($codMag : codMagistrado), collectSet($codMag))
         $distribuicao : HistDistribuicao()
     then
         Random rnd = new Random();
@@ -67,17 +67,24 @@ activation-group "mutex"
         $distribuicao.setSigOj(sigOJSorteado);
         $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
         List<String> listCodMagsOJSorteado = new ArrayList<>();
-        for (Object coj : $composicoesOJs) {
-            if (((ComposicaoOj)coj).getSigOj().equals(sigOJSorteado)) {
-                listCodMagsOJSorteado.add(((ComposicaoOj)coj).getCodMagistrado());
+        for (Object cojObj : $listComposicoesOJs) {
+            ComposicaoOj coj = (ComposicaoOj) cojObj;
+            if (coj.getSigOj().equals(sigOJSorteado)) {
+                listCodMagsOJSorteado.add(coj.getCodMagistrado());
             }
         }
-        Sorteio sorteio = new Sorteio($listSigOJsCompetentes, sigOJSorteado, listCodMagsOJSorteado, null);
+        //List<String> listImpedidos = ((List<String>) $magsImpedidos);
+        Sorteio sorteio = new Sorteio($listSigOJsCompetentes, sigOJSorteado, listCodMagsOJSorteado, $magsImpedidos, null);
         if (listCodMagsOJSorteado.size() > 0) {
             $distribuicao.setCodTipoDist("O");
             String codMagistradoSorteado = listCodMagsOJSorteado.get(rnd.nextInt(listCodMagsOJSorteado.size()));
-            $distribuicao.setCodMagistrado(codMagistradoSorteado);
-            sorteio.setCodMagistradoSorteado(codMagistradoSorteado);
+            if ($magsImpedidos.contains(codMagistradoSorteado)) {
+                $distribuicao.setCodTipoDist("N");
+                sorteio.setCodMagistradoSorteado(codMagistradoSorteado + " sorteado é impedido");
+            } else {
+                $distribuicao.setCodMagistrado(codMagistradoSorteado);
+                sorteio.setCodMagistradoSorteado(codMagistradoSorteado);
+            }
         } else {
             $distribuicao.setCodTipoDist("N");
             sorteio.setCodMagistradoSorteado("não há magistrado disponível para sorteio");
@@ -91,13 +98,11 @@ salience -1000
     when
         $pc : ProcessoCompleto()
         $distribuicao : HistDistribuicao()
-        $percepcoes : Percepcoes()
     then
-        System.out.println($percepcoes);
         LocalDateTime now = LocalDateTime.now();
         $distribuicao.setCodProcesso($pc.getProcesso().getCodProcesso());
         $distribuicao.setCodTipoDist("N");
         $distribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
         $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
-        $distribuicao.setTxtDistribuicao($percepcoes.toString() + $pc.toString());
+        $distribuicao.setTxtDistribuicao("NULL");
 end

@@ -1,6 +1,7 @@
 package br.unb.sma.entities;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by zidenis.
@@ -12,12 +13,14 @@ public class Sorteio {
     private String sigOJSorteado;
     private List<String> listCodMagsOJSorteado;
     private String codMagistradoSorteado;
+    private Set<String> magsImpedidos;
 
-    public Sorteio(List<String> listSigOJsCompetentes, String sigOJSorteado, List<String> listCodMagsOJSorteado, String codMagistradoSorteado) {
+    public Sorteio(List<String> listSigOJsCompetentes, String sigOJSorteado, List<String> listCodMagsOJSorteado, Set<String> magsImpedidos, String codMagistradoSorteado) {
         this.listSigOJsCompetentes = listSigOJsCompetentes;
         this.sigOJSorteado = sigOJSorteado;
         this.listCodMagsOJSorteado = listCodMagsOJSorteado;
         this.codMagistradoSorteado = codMagistradoSorteado;
+        this.magsImpedidos = magsImpedidos;
     }
 
     public List<String> getListSigOJsCompetentes() {
@@ -52,12 +55,21 @@ public class Sorteio {
         this.codMagistradoSorteado = codMagistradoSorteado;
     }
 
+    public Set<String> getMagsImpedidos() {
+        return magsImpedidos;
+    }
+
+    public void setMagsImpedidos(Set<String> magsImpedidos) {
+        this.magsImpedidos = magsImpedidos;
+    }
+
     @Override
     public String toString() {
         return "Sorteio{" +
                 "listSigOJsCompetentes=" + listSigOJsCompetentes +
                 ", sigOJSorteado='" + sigOJSorteado + '\'' +
                 ", listCodMagsOJSorteado=" + listCodMagsOJSorteado +
+                ", magsImpedidos=" + magsImpedidos +
                 ", codMagistradoSorteado='" + codMagistradoSorteado + '\'' +
                 '}';
     }

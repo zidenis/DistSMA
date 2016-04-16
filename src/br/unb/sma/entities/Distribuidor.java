@@ -4,7 +4,7 @@
 package br.unb.sma.entities;
 
 
-import br.unb.sma.utils.Status;
+import br.unb.sma.agents.AGP;
 
 import java.io.Serializable;
 
@@ -20,7 +20,7 @@ public class Distribuidor implements Serializable, AgentEntity {
     private String codDistribuidor;
     private String nomDistribuidor;
 
-    private String status = Status.LOADED;
+    private String status = AGP.LOADED;
 
     public Distribuidor() {
     }
@@ -40,7 +40,7 @@ public class Distribuidor implements Serializable, AgentEntity {
 
     @Override
     public String toString() {
-        return codDistribuidor + (status.equals(Status.LOADED) ? status : " (" + status + ")");
+        return codDistribuidor + (status.equals(AGP.LOADED) ? status : " (" + status + ")");
     }
 
     @Override

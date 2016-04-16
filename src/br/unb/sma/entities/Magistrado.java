@@ -4,7 +4,7 @@
 package br.unb.sma.entities;
 
 
-import br.unb.sma.utils.Status;
+import br.unb.sma.agents.AGP;
 
 import java.io.Serializable;
 
@@ -21,7 +21,7 @@ public class Magistrado implements Serializable, AgentEntity {
     private String nomMagistrado;
     private Boolean indAdministracao;
 
-    private String status = Status.LOADED;
+    private String status = AGP.LOADED;
 
     public Magistrado() {
     }
@@ -44,7 +44,7 @@ public class Magistrado implements Serializable, AgentEntity {
 
     @Override
     public String toString() {
-        return codMagistrado + (status.equals(Status.LOADED) ? status : " (" + status + ")");
+        return codMagistrado + (status.equals(AGP.LOADED) ? status : " (" + status + ")");
     }
 
     @Override

@@ -4,7 +4,7 @@
 package br.unb.sma.entities;
 
 
-import br.unb.sma.utils.Status;
+import br.unb.sma.agents.AGP;
 
 import java.io.Serializable;
 
@@ -21,7 +21,7 @@ public class Protocolo implements Serializable, AgentEntity {
     private String nomProtocolo;
     private Byte numTribunal;
 
-    private String status = Status.LOADED;
+    private String status = AGP.LOADED;
 
     public Protocolo() {
     }
@@ -44,7 +44,7 @@ public class Protocolo implements Serializable, AgentEntity {
 
     @Override
     public String toString() {
-        return nomProtocolo + (status.equals(Status.LOADED) ? status : " (" + status + ")");
+        return nomProtocolo + (status.equals(AGP.LOADED) ? status : " (" + status + ")");
     }
 
     @Override

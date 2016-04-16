@@ -19,6 +19,10 @@ import java.awt.event.WindowEvent;
 
 public class AGP extends SMAgent {
 
+    public static final String ATIVADO = "ativado";
+    public static final String DESATIVADO = "desativ.";
+    public static final String LOADED = "";
+
     private JFrame gui;
     private AGP agent = this;
     private AGPview view;

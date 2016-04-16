@@ -4,7 +4,6 @@ import br.unb.sma.agents.AGP;
 import br.unb.sma.entities.Distribuidor;
 import br.unb.sma.entities.Magistrado;
 import br.unb.sma.entities.Protocolo;
-import br.unb.sma.utils.Status;
 
 import javax.swing.*;
 import java.util.List;
@@ -68,7 +67,7 @@ public class AGPview {
 
     private void ativarAPselecionado() {
         for (Protocolo protocolo : (List<Protocolo>) listAP.getSelectedValuesList()) {
-            if (!protocolo.getStatus().equals(Status.ATIVADO)) {
+            if (!protocolo.getStatus().equals(AGP.ATIVADO)) {
                 agent.activateAgent(protocolo);
             }
         }
@@ -77,7 +76,7 @@ public class AGPview {
     private void desativarAPselecionado() {
         for (Protocolo protocolo : (List<Protocolo>) listAP.getSelectedValuesList()) {
             String status = protocolo.getStatus();
-            if (status.equals(Status.ATIVADO)) {
+            if (status.equals(AGP.ATIVADO)) {
                 agent.deactivateAgent(protocolo);
             }
         }
@@ -85,7 +84,7 @@ public class AGPview {
 
     private void ativarADselecionado() {
         for (Distribuidor distribuidor : (List<Distribuidor>) listAD.getSelectedValuesList()) {
-            if (!distribuidor.getStatus().equals(Status.ATIVADO)) {
+            if (!distribuidor.getStatus().equals(AGP.ATIVADO)) {
                 agent.activateAgent(distribuidor);
             }
         }
@@ -94,7 +93,7 @@ public class AGPview {
     private void desativarADselecionado() {
         for (Distribuidor distribuidor : (List<Distribuidor>) listAD.getSelectedValuesList()) {
             String status = distribuidor.getStatus();
-            if (status.equals(Status.ATIVADO)) {
+            if (status.equals(AGP.ATIVADO)) {
                 agent.deactivateAgent(distribuidor);
             }
         }
@@ -102,7 +101,7 @@ public class AGPview {
 
     private void ativarAMselecionado() {
         for (Magistrado magistrado : (List<Magistrado>) listAM.getSelectedValuesList()) {
-            if (!magistrado.getStatus().equals(Status.ATIVADO)) {
+            if (!magistrado.getStatus().equals(AGP.ATIVADO)) {
                 agent.activateAgent(magistrado);
             }
         }
@@ -111,7 +110,7 @@ public class AGPview {
     private void desativarAMselecionado() {
         for (Magistrado magistrado : (List<Magistrado>) listAM.getSelectedValuesList()) {
             String status = magistrado.getStatus();
-            if (status.equals(Status.ATIVADO)) {
+            if (status.equals(AGP.ATIVADO)) {
                 agent.deactivateAgent(magistrado);
             }
         }

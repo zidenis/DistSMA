@@ -61,12 +61,9 @@ public class Competencia implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Competencia (");
-
-        sb.append(sigClasse);
-        sb.append(", ").append(sigOj);
-
-        sb.append(")");
-        return sb.toString();
+        return "Competencia{" +
+                "sigClasse='" + sigClasse + '\'' +
+                ", sigOj='" + sigOj + '\'' +
+                '}';
     }
 }

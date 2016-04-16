@@ -145,19 +145,16 @@ public class HistDistribuicao implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("HistDistribuicao (");
-
-        sb.append(codDistribuidor);
-        sb.append(", ").append(seqDistribuicao);
-        sb.append(", ").append(codProcesso);
-        sb.append(", ").append(codTipoDist);
-        sb.append(", ").append(dtaDistribuicao);
-        sb.append(", ").append(codMagistrado);
-        sb.append(", ").append(txtRegraAplicada);
-        sb.append(", ").append(txtDistribuicao);
-        sb.append(", ").append(sigOj);
-
-        sb.append(")");
-        return sb.toString();
+        return "HistDistribuicao{" +
+                "codDistribuidor='" + codDistribuidor + '\'' +
+                ", seqDistribuicao=" + seqDistribuicao +
+                ", codProcesso=" + codProcesso +
+                ", codTipoDist='" + codTipoDist + '\'' +
+                ", dtaDistribuicao=" + dtaDistribuicao +
+                ", codMagistrado='" + codMagistrado + '\'' +
+                ", txtDistribuicao='" + txtDistribuicao + '\'' +
+                ", sigOj='" + sigOj + '\'' +
+                ", txtRegraAplicada='" + txtRegraAplicada + '\'' +
+                '}';
     }
 }

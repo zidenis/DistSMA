@@ -123,17 +123,14 @@ public class FaseProcessual implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("FaseProcessual (");
-
-        sb.append(codProcesso);
-        sb.append(", ").append(dtaInicioFase);
-        sb.append(", ").append(sigClasse);
-        sb.append(", ").append(dtaTerminoFase);
-        sb.append(", ").append(codMagistrado);
-        sb.append(", ").append(codMotivoRedist);
-        sb.append(", ").append(sigOj);
-
-        sb.append(")");
-        return sb.toString();
+        return "FaseProcessual{" +
+                "codProcesso=" + codProcesso +
+                ", dtaInicioFase=" + dtaInicioFase +
+                ", sigClasse='" + sigClasse + '\'' +
+                ", dtaTerminoFase=" + dtaTerminoFase +
+                ", codMagistrado='" + codMagistrado + '\'' +
+                ", codMotivoRedist=" + codMotivoRedist +
+                ", sigOj='" + sigOj + '\'' +
+                '}';
     }
 }

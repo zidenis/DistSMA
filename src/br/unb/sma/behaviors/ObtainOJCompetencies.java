@@ -1,13 +1,14 @@
 package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AD;
+import br.unb.sma.entities.Competencia;
 import jade.core.behaviours.OneShotBehaviour;
 import org.jooq.Record;
 import org.jooq.Result;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import static br.unb.sma.database.Tables.T_COMPETENCIA;
 
@@ -18,7 +19,7 @@ import static br.unb.sma.database.Tables.T_COMPETENCIA;
 public class ObtainOJCompetencies extends OneShotBehaviour {
 
     private AD ad;
-    private HashMap<String, List<String>> competencias;
+    private HashMap<String, Set<String>> competencias;
 
     public ObtainOJCompetencies(AD agent) {
         super(agent);
@@ -33,18 +34,10 @@ public class ObtainOJCompetencies extends OneShotBehaviour {
             FROM t_competencia
          */
         Result<Record> result;
-        result = ad.getDbDSL().select().from(T_COMPETENCIA).fetch();
-        for (Record r : result) {
-            String sigClasse = r.getValue(T_COMPETENCIA.SIG_CLASSE);
-            String sigOJ = r.getValue(T_COMPETENCIA.SIG_OJ);
-            if (competencias.get(sigClasse) == null) {
-                List<String> ojs = new ArrayList<>();
-                ojs.add(sigOJ);
-                competencias.put(sigClasse, ojs);
-            } else {
-                competencias.get(sigClasse).add(sigOJ);
-            }
-        }
+        List<Competencia> competencias = ad.getDbDSL()
+                .select()
+                .from(T_COMPETENCIA)
+                .fetchInto(Competencia.class);
         ad.setCompetencias(competencias);
     }
 }

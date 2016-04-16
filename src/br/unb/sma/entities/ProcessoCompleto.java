@@ -165,14 +165,17 @@ public class ProcessoCompleto implements Serializable {
 
     @Override
     public String toString() {
-        return
-                "\n processo=" + processo +
-                        "\n partes=" + partes +
-                        "\n advogados=" + advogados +
-                        "\n procuradores=" + procuradores +
-                        "\n faseAtual=" + faseAtual +
-                        "\n faseAnterior=" + faseAnterior +
-                        "\n fasesProcRel=" + fasesProcRel;
+        return "ProcessoCompleto{" +
+                "processo=" + processo +
+                ", agent=" + agent +
+                ", codProc=" + codProc +
+                ", partes=" + partes +
+                ", advogados=" + advogados +
+                ", procuradores=" + procuradores +
+                ", faseAtual=" + faseAtual +
+                ", faseAnterior=" + faseAnterior +
+                ", fasesProcRel=" + fasesProcRel +
+                '}';
     }
 
     public Processo getProcesso() {

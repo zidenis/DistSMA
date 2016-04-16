@@ -84,14 +84,11 @@ public class Advogado implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Advogado (");
-
-        sb.append(numAdvogado);
-        sb.append(", ").append(nomAdvogado);
-        sb.append(", ").append(numOab);
-        sb.append(", ").append(sigUfOab);
-
-        sb.append(")");
-        return sb.toString();
+        return "Advogado{" +
+                "numAdvogado=" + numAdvogado +
+                ", nomAdvogado='" + nomAdvogado + '\'' +
+                ", numOab=" + numOab +
+                ", sigUfOab='" + sigUfOab + '\'' +
+                '}';
     }
 }

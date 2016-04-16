@@ -96,15 +96,12 @@ public class Parte implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Parte (");
-
-        sb.append(codParte);
-        sb.append(", ").append(nomParte);
-        sb.append(", ").append(tipParte);
-        sb.append(", ").append(numCnpj);
-        sb.append(", ").append(numCpf);
-
-        sb.append(")");
-        return sb.toString();
+        return "Parte{" +
+                "codParte=" + codParte +
+                ", nomParte='" + nomParte + '\'' +
+                ", tipParte='" + tipParte + '\'' +
+                ", numCnpj=" + numCnpj +
+                ", numCpf=" + numCpf +
+                '}';
     }
 }

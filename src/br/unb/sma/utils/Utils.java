@@ -70,19 +70,31 @@ public class Utils {
         return buf.toString();
     }
 
-    public static Point guiLocation() {
-        int x;
-        int y;
-        int maxY = Integer.MIN_VALUE;
-        int maxX = Integer.MIN_VALUE;
+    public static Point guiLocation(String guiType) {
+        int x = 0;
+        int y = 0;
+        int maxY = 0;
+        int maxX = 0;
         for (Frame otherFrame : Frame.getFrames()) {
-            if (otherFrame.isShowing()) {
+            if (otherFrame.isShowing() && otherFrame.getTitle().startsWith(guiType)) {
                 maxX = Math.max(maxX, otherFrame.getX());
                 maxY = Math.max(maxY, otherFrame.getY());
             }
         }
-        x = maxX + 23;
-        y = maxY + 23;
+        if (maxX == 0) {
+            if (guiType.equals("AP")) {
+                x = 1;
+            }
+            if (guiType.equals("AD")) {
+                x = 250;
+            }
+            if (guiType.equals("AM")) {
+                x = 430;
+            }
+        } else {
+            x = maxX + 21;
+            y = maxY + 21;
+        }
         return new Point(x, y);
     }
 }

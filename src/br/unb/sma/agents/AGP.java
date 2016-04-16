@@ -61,6 +61,7 @@ public class AGP extends SMAgent {
                     view = new AGPview(agent);
                     gui.setContentPane(view.getForm());
                     gui.pack();
+                    gui.setLocation(900, 0);
                     gui.setVisible(true);
                     gui.addWindowListener(new WindowAdapter() {
                         @Override

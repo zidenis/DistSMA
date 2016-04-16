@@ -117,7 +117,7 @@ public class AP extends SMAgent {
                     view = new APview(agent);
                     gui.setContentPane(view.getForm());
                     gui.pack();
-                    gui.setLocation(Utils.guiLocation());
+                    gui.setLocation(Utils.guiLocation("AP"));
                     gui.setVisible(true);
                     gui.addWindowListener(new WindowAdapter() {
                         @Override

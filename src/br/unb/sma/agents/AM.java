@@ -128,7 +128,7 @@ public class AM extends SMAgent {
                     view = new AMview(agent);
                     gui.setContentPane(view.getForm());
                     gui.pack();
-                    gui.setLocation(Utils.guiLocation());
+                    gui.setLocation(Utils.guiLocation("AM"));
                     gui.setVisible(true);
                     gui.addWindowListener(new WindowAdapter() {
                         @Override

@@ -261,7 +261,7 @@ public class AD extends SMAgent {
                     view = new ADview(agent);
                     gui.setContentPane(view.getForm());
                     gui.pack();
-                    gui.setLocation(Utils.guiLocation());
+                    gui.setLocation(Utils.guiLocation("AD"));
                     gui.setVisible(true);
                     gui.addWindowListener(new WindowAdapter() {
                         @Override

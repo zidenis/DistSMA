@@ -17,10 +17,6 @@ public class AMview {
     private JLabel qtdParteImped;
     private JLabel qtdAdvImpedLabel;
     private JLabel qtdAdvImped;
-    private JLabel QtdProcRecLabel;
-    private JLabel QtdProcRec;
-    private JLabel QtdProcBaixaLabel;
-    private JLabel QtdProcBaixa;
     private JPanel form;
     private AM agent;
 
@@ -48,11 +44,4 @@ public class AMview {
         this.qtdAdvImped.setText(qtdAdvImped);
     }
 
-    public void setQtdProcRec(String qtdProcRec) {
-        QtdProcRec.setText(qtdProcRec);
-    }
-
-    public void setQtdProcBaixa(String qtdProcBaixa) {
-        QtdProcBaixa.setText(qtdProcBaixa);
-    }
 }

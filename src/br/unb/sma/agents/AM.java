@@ -14,11 +14,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import static br.unb.sma.database.Tables.T_FASE_PROCESSUAL;
-import static br.unb.sma.database.Tables.T_HIST_DISTRIBUICAO;
 
 /**
  * Created by zidenis.
@@ -77,32 +75,37 @@ public class AM extends SMAgent {
 
     private void processQueryIfImpediment(ACLMessage msg) {
         try {
+            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
+            reply.addReceiver(msg.getSender());
+            Envelope envelope = new Envelope();
             ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
             boolean impedido = false;
-            StringBuilder razaoImpedimento = new StringBuilder();
+            List<String> tipos = new ArrayList<>();
+            List<String> detalhamentos = new ArrayList<>();
             // MA declarou-se impedido para julgar o processo determinado
             if (impedimentosProcessos.contains(pc.getProcesso().getCodProcesso())) {
-                razaoImpedimento.append(getLocalName()).append(" impedido para julgar processo ").append(pc.getProcesso().toString()).append(" ");
                 impedido = true;
+                tipos.add("Processo");
+                detalhamentos.add(pc.getProcesso().toString());
             }
             for (Parte parte : pc.getPartes()) {
                 if (impedimentosPartes.contains(parte.getCodParte())) {
-                    razaoImpedimento.append(getLocalName()).append(" impedido para julgar processo em que figura a parte ").append(parte.getNomParte()).append(" ");
                     impedido = true;
+                    tipos.add("Parte");
+                    detalhamentos.add(parte.toString());
                 }
             }
             for (Advogado adv : pc.getAdvogados()) {
                 if (impedimentosAdvogados.contains(adv.getNumAdvogado())) {
-                    razaoImpedimento.append(getLocalName()).append(" impedido para julgar processo em que figura o advogado ").append(adv.getNomAdvogado()).append(" ");
                     impedido = true;
+                    tipos.add("Advogado");
+                    detalhamentos.add(adv.toString());
                 }
             }
-            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-            reply.addReceiver(msg.getSender());
-            Envelope envelope = new Envelope();
             if (impedido) {
                 envelope.setComments(AD.INFORM_IMPEDIMENT);
-                reply.addUserDefinedParameter("razao", razaoImpedimento.toString());
+                reply.addUserDefinedParameter("tipo", tipos.toString());
+                reply.addUserDefinedParameter("detalhamento", detalhamentos.toString());
             } else {
                 envelope.setComments(AD.INFORM_COMPETENCE);
             }
@@ -133,9 +136,6 @@ public class AM extends SMAgent {
                             super.windowClosing(e);
                         }
                     });
-                    updateNumProcessosBaixados();
-                    updateNumProcessosDistribuidos();
-
                 } catch (Exception e) {
                     Utils.logError(getLocalName() + " : erro ao criar GUI");
                     e.printStackTrace();
@@ -179,36 +179,6 @@ public class AM extends SMAgent {
             view.setQtdAdvImped(String.valueOf(impedimentosAdvogados.size()));
             gui.pack();
         });
-    }
-
-    private void updateNumProcessosDistribuidos() {
-        /*
-        SELECT COUNT(cod_processo)
-          FROM t_hist_distribuicao
-         WHERE cod_magistrado = ?codMagistrado?
-         */
-        int count = getDbDSL().selectCount()
-                .from(T_HIST_DISTRIBUICAO)
-                .where(T_HIST_DISTRIBUICAO.COD_MAGISTRADO.equal(magistrado.getCodMagistrado()))
-                .fetchOne()
-                .value1();
-        view.setQtdProcRec(String.valueOf(count));
-    }
-
-    private void updateNumProcessosBaixados() {
-        /*
-        SELECT COUNT(cod_processo)
-          FROM t_fase_processual
-         WHERE cod_magistrado = ?codMagistrado?
-           AND dta_termino_fase IS NOT NULL
-         */
-        int count = getDbDSL().selectCount()
-                .from(T_FASE_PROCESSUAL)
-                .where(T_FASE_PROCESSUAL.COD_MAGISTRADO.equal(magistrado.getCodMagistrado()))
-                .and(T_FASE_PROCESSUAL.DTA_TERMINO_FASE.isNotNull())
-                .fetchOne()
-                .value1();
-        view.setQtdProcBaixa(String.valueOf(count));
     }
 
     public Magistrado getMagistrado() {

@@ -1,4 +1,4 @@
-package br.unb.sma.utils;
+package br.unb.sma.entities;
 
 /**
  * Created by zidenis.

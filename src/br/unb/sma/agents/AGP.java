@@ -5,7 +5,7 @@ import br.unb.sma.behaviors.ActivateAgent;
 import br.unb.sma.behaviors.DeactivateAgent;
 import br.unb.sma.behaviors.GetAgentsInfo;
 import br.unb.sma.behaviors.ShutdownSMA;
-import br.unb.sma.utils.AgentEntity;
+import br.unb.sma.entities.AgentEntity;
 import br.unb.sma.utils.Utils;
 import jade.content.lang.sl.SLCodec;
 import jade.core.behaviours.CyclicBehaviour;

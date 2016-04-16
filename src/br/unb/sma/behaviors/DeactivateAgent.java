@@ -2,7 +2,7 @@ package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AGP;
 import br.unb.sma.agents.SMAgent;
-import br.unb.sma.utils.AgentEntity;
+import br.unb.sma.entities.AgentEntity;
 import br.unb.sma.utils.Status;
 import br.unb.sma.utils.Utils;
 import jade.content.onto.basic.Action;

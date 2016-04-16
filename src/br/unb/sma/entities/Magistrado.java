@@ -4,7 +4,6 @@
 package br.unb.sma.entities;
 
 
-import br.unb.sma.utils.AgentEntity;
 import br.unb.sma.utils.Status;
 
 import java.io.Serializable;

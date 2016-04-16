@@ -54,6 +54,7 @@ public class AD extends SMAgent {
     private Map<Long, Set<String>> magistradosQuestionados = new HashMap<>(); // "Código do Processo" -> {Magistrados}
     private Map<Long, Set<Impedimento>> impedimentos = new HashMap<>(); // "Código do Processo" -> {Impedimentos}
     private Map<Long, AID> protocoloResponsavel = new HashMap<>(); // "Código do Processo" -> Agente Protocolo
+    private Set<Long> processosEmAnalise = new HashSet<>(); // Para evitar problemas de concorrência
 
     private static KnowledgeBase buildDroolsKnowledgeBase() {
         KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
@@ -151,17 +152,21 @@ public class AD extends SMAgent {
     private void processInformLawsuit(ACLMessage msg) {
         try {
             ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
-            protocoloResponsavel.put(pc.getProcesso().getCodProcesso(), msg.getSender());
-            if (hasRelatedDistribution(pc)) {
-                HistDistribuicao distribuicao = applyDistributionRules(pc);
-                requestAplicationOfDistribution(distribuicao, msg.getSender());
-            } else {
-                Set<String> magistradosDisponiveis = new HashSet<>();
-                for (DFAgentDescription dfd : magistrateAgents) {
-                    magistradosDisponiveis.add(dfd.getName().getLocalName());
+            if (processosEmAnalise.add(pc.getProcesso().getCodProcesso())) {
+                protocoloResponsavel.put(pc.getProcesso().getCodProcesso(), msg.getSender());
+                if (hasRelatedDistribution(pc)) {
+                    HistDistribuicao distribuicao = applyDistributionRules(pc);
+                    requestAplicationOfDistribution(distribuicao, msg.getSender());
+                } else {
+                    Set<String> magistradosDisponiveis = new HashSet<>();
+                    for (DFAgentDescription dfd : magistrateAgents) {
+                        magistradosDisponiveis.add(dfd.getName().getLocalName());
+                    }
+                    magistradosQuestionados.put(pc.getProcesso().getCodProcesso(), magistradosDisponiveis);
+                    addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents));
                 }
-                magistradosQuestionados.put(pc.getProcesso().getCodProcesso(), magistradosDisponiveis);
-                addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents));
+            } else {
+                Utils.logInfo(getLocalName() + " : processo informado já em processo distribuição");
             }
         } catch (UnreadableException e) {
             Utils.logError(getLocalName() + " : erro no Processo recebido de " + msg.getSender().getLocalName());
@@ -249,6 +254,7 @@ public class AD extends SMAgent {
         if (distribuicao != null) {
             addBehaviour(new UpdateDistributionDB(this, distribuicao));
         }
+        processosEmAnalise.remove(distribuicao.getCodProcesso());
     }
 
     protected void loadGUI() {

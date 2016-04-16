@@ -3,10 +3,20 @@ package br.unb.sma.rules;
 import br.unb.sma.entities.ProcessoCompleto;
 import br.unb.sma.entities.FaseProcessual;
 import br.unb.sma.entities.HistDistribuicao;
+import br.unb.sma.entities.Percepcoes;
+import br.unb.sma.entities.Competencia;
+import br.unb.sma.entities.ComposicaoOj;
+import br.unb.sma.entities.Sorteio;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
 
-dialect  "mvel"
+dialect  "java"
 
 rule "Distribuição por prevenção para processos que já foram anteriormente distribuídos para um Magistrado"
 activation-group "mutex"
@@ -20,7 +30,7 @@ activation-group "mutex"
         $distribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
         $distribuicao.setCodMagistrado($pc.getFaseAnterior().getCodMagistrado());
         $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
-        $distribuicao.setTxtDistribuicao("lawsuit previusly distributed on its phase " + $pc.getFaseAnterior().getSigClasse());
+        $distribuicao.setTxtDistribuicao($pc.getFaseAnterior().toString());
         $distribuicao.setSigOj($pc.getFaseAnterior().getSigOj());
 end
 
@@ -37,8 +47,42 @@ activation-group "mutex"
         $distribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
         $distribuicao.setCodMagistrado($fase.getCodMagistrado());
         $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
-        $distribuicao.setTxtDistribuicao("Código do processo relacionado: " + $fase.getCodProcesso());
+        $distribuicao.setTxtDistribuicao("ProcessoRelacionado{" + $fase + "}");
         $distribuicao.setSigOj($fase.getSigOj());
+end
+
+rule "Distribuição ordinária mediante sorteio dos Magistrados que compõe os Orgãos Judicantes Competentes"
+activation-group "mutex"
+    when
+        $pc : ProcessoCompleto(faseAnterior == null, fasesProcRel == null, faseAtual != null, $classe : faseAtual.sigClasse)
+        $listSigOJsCompetentes : List() from accumulate(Competencia(sigClasse == $classe, $sigOJ : sigOj), collectList($sigOJ))
+        $composicoesOJs : List() from collect(ComposicaoOj(sigOj memberOf $listSigOJsCompetentes))
+        $distribuicao : HistDistribuicao()
+    then
+        Random rnd = new Random();
+        LocalDateTime now = LocalDateTime.now();
+        $distribuicao.setCodProcesso($pc.getProcesso().getCodProcesso());
+        $distribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
+        String sigOJSorteado = (String) $listSigOJsCompetentes.get(rnd.nextInt($listSigOJsCompetentes.size()));
+        $distribuicao.setSigOj(sigOJSorteado);
+        $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
+        List<String> listCodMagsOJSorteado = new ArrayList<>();
+        for (Object coj : $composicoesOJs) {
+            if (((ComposicaoOj)coj).getSigOj().equals(sigOJSorteado)) {
+                listCodMagsOJSorteado.add(((ComposicaoOj)coj).getCodMagistrado());
+            }
+        }
+        Sorteio sorteio = new Sorteio($listSigOJsCompetentes, sigOJSorteado, listCodMagsOJSorteado, null);
+        if (listCodMagsOJSorteado.size() > 0) {
+            $distribuicao.setCodTipoDist("O");
+            String codMagistradoSorteado = listCodMagsOJSorteado.get(rnd.nextInt(listCodMagsOJSorteado.size()));
+            $distribuicao.setCodMagistrado(codMagistradoSorteado);
+            sorteio.setCodMagistradoSorteado(codMagistradoSorteado);
+        } else {
+            $distribuicao.setCodTipoDist("N");
+            sorteio.setCodMagistradoSorteado("não há magistrado disponível para sorteio");
+        }
+        $distribuicao.setTxtDistribuicao(sorteio.toString());
 end
 
 rule "Ausência de regra específica para a distribuição"
@@ -47,11 +91,13 @@ salience -1000
     when
         $pc : ProcessoCompleto()
         $distribuicao : HistDistribuicao()
+        $percepcoes : Percepcoes()
     then
+        System.out.println($percepcoes);
         LocalDateTime now = LocalDateTime.now();
         $distribuicao.setCodProcesso($pc.getProcesso().getCodProcesso());
-        $distribuicao.setCodTipoDist("C");
+        $distribuicao.setCodTipoDist("N");
         $distribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
         $distribuicao.setTxtRegraAplicada(drools.getRule().getName());
-        $distribuicao.setTxtDistribuicao($pc.toString());
+        $distribuicao.setTxtDistribuicao($percepcoes.toString() + $pc.toString());
 end

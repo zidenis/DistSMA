@@ -47,10 +47,10 @@ public class AD extends SMAgent {
     private JFrame gui;
     private AD agent = this;
     private ADview view;
-    private Map<String, List<String>> competencias; // "Classe do Processo" -> ["Órgãos Judicantes"]
+    private List<Competencia> competencias;
+    private Map<String, List<ComposicaoOj>> composicoes = new HashMap<>();
     private DFAgentDescription[] protocolAgents;
     private DFAgentDescription[] magistrateAgents;
-    private Map<String, Set<AID>> composicao; // "Órgão Judicante" -> {Agentes Magistrados}
     private Map<Long, Set<String>> magistradosQuestionados = new HashMap<>(); // "Código do Processo" -> {Magistrados}
     private Map<Long, Set<String>> magistradosImpedidos = new HashMap<>(); // "Código do Processo" -> {Magistrados}
     private Map<Long, Set<String>> magistradosCompetentes = new HashMap<>(); // "Código do Processo" -> {Magistrados}
@@ -76,7 +76,7 @@ public class AD extends SMAgent {
         super.setup();
         seqDistribuicao = getNextSeqDistribuicaoFromDB();
         addBehaviour(new ObtainOJCompetencies(this));
-        if (composicao == null) findAgents();
+        findAgents();
     }
 
     private Integer getNextSeqDistribuicaoFromDB() {
@@ -135,16 +135,13 @@ public class AD extends SMAgent {
         try {
             List<ComposicaoOj> composicaoOjList = (List) msg.getContentObject();
             for (ComposicaoOj coj : composicaoOjList) {
-                String sigOj = coj.getSigOj();
-                if (composicao != null && composicao.containsKey(sigOj)) {
-                    composicao.get(sigOj).add(msg.getSender());
+                String codMag = coj.getCodMagistrado();
+                if (composicoes.containsKey(codMag)) {
+                    composicoes.get(codMag).add(coj);
                 } else {
-                    if (composicao == null) {
-                        composicao = new HashMap<>();
-                    }
-                    Set<AID> ams = new HashSet<>();
-                    ams.add(msg.getSender());
-                    composicao.put(sigOj, ams);
+                    List<ComposicaoOj> ojs = new LinkedList<>();
+                    ojs.add(coj);
+                    composicoes.put(codMag, ojs);
                 }
             }
         } catch (UnreadableException e) {
@@ -180,6 +177,14 @@ public class AD extends SMAgent {
         distribuicao.setSeqDistribuicao(seqDistribuicao++);
         ksession.insert(distribuicao);
         ksession.insert(pc);
+        for (Competencia competencia : competencias) ksession.insert(competencia);
+        for (List<ComposicaoOj> magistrados : composicoes.values()) {
+            for (ComposicaoOj composicaoOj : magistrados) {
+                ksession.insert(composicaoOj);
+            }
+        }
+        Percepcoes percepcoes = new Percepcoes(magistradosImpedidos, magistradosCompetentes);
+        ksession.insert(percepcoes);
         ksession.fireAllRules();
         ksession.dispose();
         return distribuicao;
@@ -246,10 +251,10 @@ public class AD extends SMAgent {
     }
 
     private void requestAplicationOfDistribution(HistDistribuicao distribuicao, AID protocolAgentReceiver) {
-        Utils.logInfo(getLocalName() + " Distribuir para " + protocolAgentReceiver.getLocalName() + ": " + distribuicao);
-//        if (distribuicao != null) {
-//            addBehaviour(new UpdateDistributionDB(this, distribuicao));
-//        }
+        //Utils.logInfo(getLocalName() + " Distribuir para " + protocolAgentReceiver.getLocalName() + ": " + distribuicao);
+        if (distribuicao != null) {
+            addBehaviour(new UpdateDistributionDB(this, distribuicao));
+        }
     }
 
     protected void loadGUI() {
@@ -288,9 +293,8 @@ public class AD extends SMAgent {
         return receiveMessages;
     }
 
-    public void setCompetencias(HashMap<String, List<String>> competencias) {
+    public void setCompetencias(List<Competencia> competencias) {
         this.competencias = competencias;
-//        Utils.logInfo(competencias.toString());
     }
 
     public DFAgentDescription[] getProtocolAgents() {
@@ -299,9 +303,6 @@ public class AD extends SMAgent {
 
     public void setProtocolAgents(DFAgentDescription[] protocolAgents) {
         this.protocolAgents = protocolAgents;
-//        for (DFAgentDescription dfd : protocolAgents) {
-//            Utils.logInfo(dfd.getName().toString());
-//        }
     }
 
     public DFAgentDescription[] getMagistrateAgents() {
@@ -310,17 +311,12 @@ public class AD extends SMAgent {
 
     public void setMagistrateAgents(DFAgentDescription[] magistrateAgents) {
         this.magistrateAgents = magistrateAgents;
-//        for (DFAgentDescription dfd : magistrateAgents) {
-//            Utils.logInfo(dfd.getName().toString());
-//        }
         addBehaviour(new RequestOJComposition(this, magistrateAgents));
     }
 
     private void findAgents() {
-        if (composicao != null) {
-            composicao.clear();
-        }
         // Using mutex to avoid multiple findAgents on short time
+        composicoes.clear();
         findAgentsMutex = true;
         addBehaviour(new DiscoverMagistrateAgents(this));
         addBehaviour(new DiscoverProtocolAgents(this));

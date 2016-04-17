@@ -28,6 +28,7 @@ public class AGPview {
     private JScrollPane paneAM;
     private JScrollPane paneAD;
     private JButton encerrarSMA;
+    private JButton iniciarTodosButton;
     private MyListModel<Protocolo> listAPModel;
     private MyListModel<Distribuidor> listADModel;
     private MyListModel<Magistrado> listAMModel;
@@ -47,6 +48,7 @@ public class AGPview {
         ativarAM.addActionListener(e -> ativarAMselecionado());
         desativarAM.addActionListener(e -> desativarAMselecionado());
         encerrarSMA.addActionListener(e -> encerrarSMA());
+        iniciarTodosButton.addActionListener(e -> iniciarTodos());
     }
 
     public JPanel getForm() {
@@ -114,6 +116,15 @@ public class AGPview {
                 agent.deactivateAgent(magistrado);
             }
         }
+    }
+
+    private void iniciarTodos() {
+        listAP.setSelectionInterval(0, listAPModel.getSize() - 1);
+        listAD.setSelectionInterval(0, listADModel.getSize() - 1);
+        listAM.setSelectionInterval(0, listAMModel.getSize() - 1);
+        ativarAPselecionado();
+        ativarADselecionado();
+        ativarAMselecionado();
     }
 
     private void encerrarSMA() {

@@ -86,10 +86,11 @@ public class Utils {
                 x = 1;
             }
             if (guiType.equals("AD")) {
-                x = 250;
+                x = 1;
+                y = 300;
             }
             if (guiType.equals("AM")) {
-                x = 430;
+                x = 400;
             }
         } else {
             x = maxX + 21;

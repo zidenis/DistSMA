@@ -17,8 +17,6 @@ public class ADview {
     private JPanel form;
     private JButton playButton;
     private AD agent;
-    private boolean playing = false;
-    private int delay = 3000;
 
     public ADview(AD agent) {
         this.agent = agent;
@@ -35,27 +33,25 @@ public class ADview {
     }
 
     private void playButtonPress() {
-        if (playing) {
-            playing = false;
+        if (agent.isPlaying()) {
+            agent.setPlaying(false);
             playButton.setText("Play");
         } else {
-            playing = true;
+            agent.setPlaying(true);
             playButton.setText("Stop");
-            startContinuousPlay();
+            distribuir();
+//            startContinuousPlay();
         }
     }
 
-    private void startContinuousPlay() {
-        if (playing) {
-            Timer time = new Timer();
-            time.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    distribuir();
-                    startContinuousPlay();
-                }
-            }, delay);
-        }
+    public void setPlayButtonText(String text) {
+        Timer time = new Timer();
+        time.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                SwingUtilities.invokeLater(() -> playButton.setText(text));
+            }
+        }, 200);
     }
 
 }

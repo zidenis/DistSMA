@@ -40,8 +40,10 @@ public class AD extends SMAgent {
     public static final String INFORM_PLATAFORM_CHANGE = "inform-plataform-change";
     public static final String INFORM_IMPEDIMENT = "inform-impediment";
     public static final String INFORM_COMPETENCE = "inform-competence";
+    public static final String INFORM_NO_LAWSUIT = "inform-no-lawsuit";
     private final String[] SERVICES = {DISTRIBUTE};
     boolean findAgentsMutex = false;
+    private boolean playing = false;
     private Distribuidor distribuidor;
     private Integer seqDistribuicao;
     private JFrame gui;
@@ -55,6 +57,7 @@ public class AD extends SMAgent {
     private Map<Long, Set<Impedimento>> impedimentos = new HashMap<>(); // "Código do Processo" -> {Impedimentos}
     private Map<Long, AID> protocoloResponsavel = new HashMap<>(); // "Código do Processo" -> Agente Protocolo
     private Set<Long> processosEmAnalise = new HashSet<>(); // Para evitar problemas de concorrência
+    private Set<AID> protocolAgentsInProcessing = new HashSet<>();
 
     private static KnowledgeBase buildDroolsKnowledgeBase() {
         KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
@@ -91,7 +94,7 @@ public class AD extends SMAgent {
                 .where(T_HIST_DISTRIBUICAO.COD_DISTRIBUIDOR.equal(distribuidor.getCodDistribuidor()))
                 .fetchOne().value1();
         if (actualSeq == null) actualSeq = 0;
-        return actualSeq + 1;
+        return actualSeq;
     }
 
     @Override
@@ -128,7 +131,21 @@ public class AD extends SMAgent {
             case INFORM_COMPETENCE:
                 processInformImpediment(msg, false);
                 break;
+            case INFORM_NO_LAWSUIT:
+                processInformNoLawsuit(msg);
+                break;
         }
+    }
+
+    private void processInformNoLawsuit(ACLMessage msg) {
+        Utils.logInfo(msg.getSender().getLocalName() + " : não há processos à distribuir");
+//        List<DFAgentDescription> updatedProtocolAgents = new ArrayList<DFAgentDescription>();
+//        for (DFAgentDescription dfd : protocolAgents) {
+//            if (!msg.getSender().getLocalName().equals(dfd.getName().getLocalName())) {
+//                updatedProtocolAgents.add(dfd);
+//            }
+//        }
+//        protocolAgents = updatedProtocolAgents.toArray(protocolAgents);
     }
 
     private void processInformComposition(ACLMessage msg) {
@@ -153,20 +170,26 @@ public class AD extends SMAgent {
         try {
             ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
             if (processosEmAnalise.add(pc.getProcesso().getCodProcesso())) {
+                seqDistribuicao++;
                 protocoloResponsavel.put(pc.getProcesso().getCodProcesso(), msg.getSender());
                 if (hasRelatedDistribution(pc)) {
                     HistDistribuicao distribuicao = applyDistributionRules(pc);
                     requestAplicationOfDistribution(distribuicao, msg.getSender());
                 } else {
                     Set<String> magistradosDisponiveis = new HashSet<>();
-                    for (DFAgentDescription dfd : magistrateAgents) {
-                        magistradosDisponiveis.add(dfd.getName().getLocalName());
+                    if (magistrateAgents.length > 0) {
+                        for (DFAgentDescription dfd : magistrateAgents) {
+                            magistradosDisponiveis.add(dfd.getName().getLocalName());
+                        }
+                        magistradosQuestionados.put(pc.getProcesso().getCodProcesso(), magistradosDisponiveis);
+                        addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents, seqDistribuicao.toString()));
+                    } else {
+                        Utils.logInfo(getLocalName() + " - não há MA disponíveis");
+                        processosEmAnalise.remove(pc.getProcesso().getCodProcesso());
                     }
-                    magistradosQuestionados.put(pc.getProcesso().getCodProcesso(), magistradosDisponiveis);
-                    addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents));
                 }
             } else {
-                Utils.logInfo(getLocalName() + " : processo informado já em processo distribuição");
+                Utils.logInfo(getLocalName() + " - processo informado já em processo distribuição");
             }
         } catch (UnreadableException e) {
             Utils.logError(getLocalName() + " : erro no Processo recebido de " + msg.getSender().getLocalName());
@@ -182,9 +205,13 @@ public class AD extends SMAgent {
         ksession.insert(distribuicao);
         ksession.insert(pc);
         for (Competencia competencia : competencias) ksession.insert(competencia);
+        String[] codMagsAdministracao = new String[]{"MIGM", "MEMP", "MRLP"};
+        Set<String> administracao = new HashSet<>(Arrays.asList(codMagsAdministracao));
         for (List<ComposicaoOj> magistrados : composicoes.values()) {
             for (ComposicaoOj composicaoOj : magistrados) {
-                ksession.insert(composicaoOj);
+                if (!administracao.contains(composicaoOj.getCodMagistrado())) {
+                    ksession.insert(composicaoOj);
+                }
             }
         }
         if (impedimentos.get(pc.getProcesso().getCodProcesso()) != null) {
@@ -204,7 +231,7 @@ public class AD extends SMAgent {
             }
         } else if (pc.getFasesProcRel() != null) {
             for (FaseProcessual fp : pc.getFasesProcRel()) {
-                if (!fp.getCodMagistrado().equals("null")) return true;
+                if (fp.getCodMagistrado() != null) return true;
             }
         }
         return false;
@@ -253,8 +280,13 @@ public class AD extends SMAgent {
         //Utils.logInfo(getLocalName() + " Distribuir para " + protocolAgentReceiver.getLocalName() + ": " + distribuicao);
         if (distribuicao != null) {
             addBehaviour(new UpdateDistributionDB(this, distribuicao));
+            addBehaviour(new InformDistribution(this, distribuicao, protocolAgentReceiver, seqDistribuicao.toString()));
         }
         processosEmAnalise.remove(distribuicao.getCodProcesso());
+        protocolAgentsInProcessing.remove(protocolAgentReceiver);
+        if (isPlaying() && protocolAgentsInProcessing.size() == 0) {
+            requestLawsuit();
+        }
     }
 
     protected void loadGUI() {
@@ -311,7 +343,7 @@ public class AD extends SMAgent {
 
     public void setMagistrateAgents(DFAgentDescription[] magistrateAgents) {
         this.magistrateAgents = magistrateAgents;
-        addBehaviour(new RequestOJComposition(this, magistrateAgents));
+        addBehaviour(new RequestOJComposition(this, magistrateAgents, seqDistribuicao.toString()));
     }
 
     private void findAgents() {
@@ -323,9 +355,24 @@ public class AD extends SMAgent {
     }
 
     public void requestLawsuit() {
-        if (protocolAgents != null) {
-            addBehaviour(new RequestLawsuit(this, protocolAgents));
+        for (DFAgentDescription dfd : protocolAgents) {
+            if (!protocolAgentsInProcessing.contains(dfd.getName())) {
+                protocolAgentsInProcessing.add(dfd.getName());
+                addBehaviour(new RequestLawsuit(this, dfd, seqDistribuicao.toString()));
+            }
         }
+        if (protocolAgents.length == 0) {
+            playing = false;
+            view.setPlayButtonText("Play");
+        }
+    }
+
+    public boolean isPlaying() {
+        return playing;
+    }
+
+    public void setPlaying(boolean playing) {
+        this.playing = playing;
     }
 
 }

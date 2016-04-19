@@ -17,7 +17,11 @@ import java.util.ArrayList;
 
 dialect  "java"
 
-rule "Distribuição por dependência para processos que estão relacionados a outros processos que já foram anteriormente distribuídos"
+/*  Distribution rules used in Drools engine
+    version 2016.04.18-1
+*/
+
+rule "Distribuição por dependência para processos que estão relacionados a outros que já distribuídos"
 activation-group "mutex"
 salience 10
     when
@@ -32,11 +36,12 @@ salience 10
         buildDistribuicao($distribuicao, $pc, "D", nomeRegra, codMagistrado, sigOJ, txtDistribuicao);
 end
 
-rule "Distribuição por prevenção para processos em nova fase e que devem ser encaminhados para o mesmo Magistrado da fase anterior"
+rule "Distribuição por prevenção para processos em nova fase e que devem ser encaminhados ao mesmo Magistrado/OJ da fase anterior"
 activation-group "mutex"
     when
-        $pc : ProcessoCompleto(faseAnterior != null)
+        $pc : ProcessoCompleto(faseAnterior != null, faseAtual.sigClasse != "E")
         $distribuicao : HistDistribuicao()
+
     then
         String nomeRegra = drools.getRule().getName();
         String codMagistrado = $pc.getFaseAnterior().getCodMagistrado();
@@ -45,10 +50,46 @@ activation-group "mutex"
         buildDistribuicao($distribuicao, $pc, "P", nomeRegra, codMagistrado, sigOJ, txtDistribuicao);
 end
 
-rule "Distribuição ordinária mediante sorteio dos Magistrados que compõe os Orgãos Judicantes Competentes"
+rule "Distribuição de Embargos à SDI1 por divergência de decisões entre OJs"
 activation-group "mutex"
     when
-        $pc : ProcessoCompleto(faseAnterior == null, fasesProcRel == null, faseAtual != null, $classe : faseAtual.sigClasse)
+        $pc : ProcessoCompleto(faseAnterior != null, faseAtual.sigClasse == "E")
+        $distribuicao : HistDistribuicao()
+        $listComposicoesOJs : Set() from collect(ComposicaoOj(codMagistrado != $pc.faseAnterior.codMagistrado))
+        $magsImpedidos : Set() from accumulate(Impedimento($codMag : codMagistrado), collectSet($codMag))
+    then
+        String nomeRegra = drools.getRule().getName();
+        String sigOJ = "SDI1";
+        String tipoDistribuicao;
+        Random rnd = new Random();
+        List<String> listCodMagsOJ = makeListOfCodMagFromOJ($listComposicoesOJs, sigOJ);
+        System.out.println(listCodMagsOJ);
+        String codMagistradoSorteado = null;
+        List<String> listSigOJsCompetentes = new ArrayList<>();
+        listSigOJsCompetentes.add(sigOJ);
+        Sorteio sorteio = new Sorteio(listSigOJsCompetentes, sigOJ, listCodMagsOJ, $magsImpedidos, null);
+        if (!listCodMagsOJ.isEmpty()) {
+            tipoDistribuicao = "J";
+            codMagistradoSorteado = listCodMagsOJ.get(rnd.nextInt(listCodMagsOJ.size()));
+            sorteio.setCodMagistradoSorteado(codMagistradoSorteado);
+            if ($magsImpedidos.contains(codMagistradoSorteado)) {
+                tipoDistribuicao = "N";
+                sorteio.setCodMagistradoSorteado(codMagistradoSorteado + " sorteado é impedido");
+                codMagistradoSorteado = null;
+            }
+        } else {
+            tipoDistribuicao = "N";
+            sorteio.setCodMagistradoSorteado("não há magistrado disponível para sorteio");
+        }
+        String txtDistribuicao = $pc.getFaseAnterior().toString() + " " + sorteio.toString();
+        buildDistribuicao($distribuicao, $pc, tipoDistribuicao, nomeRegra, codMagistradoSorteado, sigOJ, txtDistribuicao);
+end
+
+rule "Distribuição ordinária mediante sorteio dos Magistrados que compõem os OJs competentes"
+activation-group "mutex"
+    when
+        $pc : ProcessoCompleto(faseAnterior == null, faseAtual != null, $classe : faseAtual.sigClasse)
+        Competencia(sigClasse == $classe)
         $listSigOJsCompetentes : List() from accumulate(Competencia(sigClasse == $classe, $sigOJ : sigOj), collectList($sigOJ))
         $listComposicoesOJs : Set() from collect(ComposicaoOj(sigOj memberOf $listSigOJsCompetentes))
         $magsImpedidos : Set() from accumulate(Impedimento($codMag : codMagistrado), collectSet($codMag))
@@ -78,7 +119,7 @@ activation-group "mutex"
         buildDistribuicao($distribuicao, $pc, tipoDistribuicao, nomeRegra, codMagistradoSorteado, sigOJSorteado, txtDistribuicao);
 end
 
-rule "Ausência de regra específica para a distribuição"
+rule "Distribuição cancelada por ausência de regra específica para a distribuição"
 activation-group "mutex"
 salience -1000
     when
@@ -86,10 +127,12 @@ salience -1000
         $distribuicao : HistDistribuicao()
     then
         String nomeRegra = drools.getRule().getName();
-        buildDistribuicao($distribuicao, $pc, "N", nomeRegra, null, null, "");
+        String txtDistribuicao = $pc.toString();
+        buildDistribuicao($distribuicao, $pc, "N", nomeRegra, null, null, txtDistribuicao);
 end
 
-
+/* Helper function that define the properties of the distribution object
+*/
 function void buildDistribuicao(HistDistribuicao histDistribuicao, ProcessoCompleto pc, String codTipoDist, String regraAplicada, String codMagistrado, String sigOJ, String txtDistribuicao) {
     LocalDateTime now = LocalDateTime.now();
     histDistribuicao.setDtaDistribuicao(Timestamp.valueOf(now));
@@ -101,11 +144,13 @@ function void buildDistribuicao(HistDistribuicao histDistribuicao, ProcessoCompl
     histDistribuicao.setSigOj(sigOJ);
 }
 
-function List<String> makeListOfCodMagFromOJ(Set composicoesOJ, String sigOJSorteado) {
+/* Gets the list of codMagistrado for an especific OJ
+*/
+function List<String> makeListOfCodMagFromOJ(Set composicoesOJ, String sigOJ) {
         List<String> listCodMagsOJSorteado = new ArrayList<>();
         for (Object cojObj : composicoesOJ) {
             ComposicaoOj coj = (ComposicaoOj) cojObj;
-            if (coj.getSigOj().equals(sigOJSorteado)) {
+            if (coj.getSigOj().equals(sigOJ)) {
                 listCodMagsOJSorteado.add(coj.getCodMagistrado());
             }
         }

@@ -18,10 +18,10 @@ public class ObtainLawsuitAwaintingDistribution extends OneShotBehaviour {
     AP ap;
     byte numTribunal;
 
-    public ObtainLawsuitAwaintingDistribution(AP agent, byte numTribunal) {
+    public ObtainLawsuitAwaintingDistribution(AP agent) {
         super(agent);
         ap = agent;
-        this.numTribunal = numTribunal;
+        numTribunal = ap.getNumTribunal();
     }
 
     @Override
@@ -45,9 +45,11 @@ public class ObtainLawsuitAwaintingDistribution extends OneShotBehaviour {
                 .on(p.COD_PROCESSO.equal(f.COD_PROCESSO))
                 .where(p.NUM_TRIBUNAL.equal(numTribunal))
                 .and(f.COD_MAGISTRADO.isNull())
+                .and(f.COD_MOTIVO_REDIST.isNull())
                 .orderBy(p.DTA_AUTUACAO)
                 .limit(1)
                 .fetchOneInto(Processo.class);
         ap.setProcesso(processo);
+        ap.updateQtdProcessos();
     }
 }

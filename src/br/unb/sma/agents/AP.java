@@ -2,6 +2,8 @@ package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.APview;
 import br.unb.sma.behaviors.ObtainLawsuitAwaintingDistribution;
+import br.unb.sma.behaviors.UpdateLawsuitDB;
+import br.unb.sma.entities.HistDistribuicao;
 import br.unb.sma.entities.Processo;
 import br.unb.sma.entities.ProcessoCompleto;
 import br.unb.sma.entities.Protocolo;
@@ -9,6 +11,7 @@ import br.unb.sma.utils.Utils;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.UnreadableException;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
@@ -17,7 +20,6 @@ import java.io.IOException;
 
 import static br.unb.sma.database.Tables.T_FASE_PROCESSUAL;
 import static br.unb.sma.database.Tables.T_PROCESSO;
-
 /**
  * Created by zidenis.
  * 16-03-2016
@@ -26,8 +28,8 @@ public class AP extends SMAgent {
 
     public static final String SERVICE_TYPE = "AP";
     public static final String REQUEST_LAWSUIT = "request-lawsuit";
-    public static final String UPDATE_LAWSUIT_DB = "update-lawsuit-db";
-    private final String[] SERVICES = {AP.REQUEST_LAWSUIT, UPDATE_LAWSUIT_DB};
+    public static final String INFORM_DISTRIBUTION = "inform-distribution";
+    private final String[] SERVICES = {AP.REQUEST_LAWSUIT, INFORM_DISTRIBUTION};
 
     Protocolo protocolo;
     Processo processo;
@@ -41,7 +43,7 @@ public class AP extends SMAgent {
     protected void setup() {
         protocolo = (Protocolo) getArguments()[0];
         super.setup();
-        addBehaviour(new ObtainLawsuitAwaintingDistribution(agent, protocolo.getNumTribunal()));
+        addBehaviour(new ObtainLawsuitAwaintingDistribution(agent));
     }
 
     @Override
@@ -73,6 +75,7 @@ public class AP extends SMAgent {
                 }
             });
         } else {
+            this.processo = null;
             SwingUtilities.invokeLater(() -> {
                 if (gui.isDisplayable()) {
                     view.setProcesso("sem processos");
@@ -88,22 +91,40 @@ public class AP extends SMAgent {
             case REQUEST_LAWSUIT:
                 processRequestLawsuit(msg);
                 break;
+            case INFORM_DISTRIBUTION:
+                processInformDistribution(msg);
+                break;
         }
     }
 
     private void processRequestLawsuit(ACLMessage msg) {
-        ProcessoCompleto pc = new ProcessoCompleto(processo, this);
         ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
         reply.addReceiver(msg.getSender());
+        reply.setConversationId(msg.getConversationId());
         Envelope envelope = new Envelope();
-        envelope.setComments(AD.INFORM_LAWSUIT);
-        reply.setEnvelope(envelope);
-        try {
-            reply.setContentObject(pc);
+        if (processo != null) {
+            ProcessoCompleto pc = new ProcessoCompleto(processo, this);
+            envelope.setComments(AD.INFORM_LAWSUIT);
+            reply.setEnvelope(envelope);
+            try {
+                reply.setContentObject(pc);
+                send(reply);
+            } catch (IOException e) {
+                Utils.logError(getLocalName() + " : erro ao gerar processo para distribuição");
+            }
+        } else {
+            envelope.setComments(AD.INFORM_NO_LAWSUIT);
+            reply.setEnvelope(envelope);
             send(reply);
-        } catch (IOException e) {
-            Utils.logError(getLocalName() + " : erro ao gerar processo para distribuição");
-            e.printStackTrace();
+        }
+    }
+
+    private void processInformDistribution(ACLMessage msg) {
+        try {
+            HistDistribuicao distribuicao = (HistDistribuicao) msg.getContentObject();
+            addBehaviour(new UpdateLawsuitDB(this, distribuicao));
+        } catch (UnreadableException e) {
+            Utils.logError(getLocalName() + " : erro ao obter informação de distribuição");
         }
     }
 
@@ -125,7 +146,6 @@ public class AP extends SMAgent {
                             super.windowClosing(e);
                         }
                     });
-                    view.setQtdProcessosFila(getQtdProcessos());
                 } catch (Exception e) {
                     Utils.logError(getLocalName() + " : erro ao criar GUI");
                     e.printStackTrace();
@@ -142,7 +162,7 @@ public class AP extends SMAgent {
 
     private Integer getQtdProcessos() {
         if (qtdProcessos == null) {
-            return getDbDSL()
+            qtdProcessos = getDbDSL()
                     .selectCount()
                     .from(T_PROCESSO)
                     .innerJoin(T_FASE_PROCESSUAL)
@@ -151,8 +171,19 @@ public class AP extends SMAgent {
                     .and(T_FASE_PROCESSUAL.COD_MAGISTRADO.isNull())
                     .fetchOne()
                     .value1();
-        } else {
-            return qtdProcessos;
         }
+        return qtdProcessos--;
+    }
+
+    public void updateQtdProcessos() {
+        if (view != null) {
+            if (view.getForm().isDisplayable()) {
+                view.setQtdProcessosFila(getQtdProcessos());
+            }
+        }
+    }
+
+    public byte getNumTribunal() {
+        return protocolo.getNumTribunal();
     }
 }

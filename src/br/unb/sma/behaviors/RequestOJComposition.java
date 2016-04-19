@@ -15,10 +15,12 @@ public class RequestOJComposition extends OneShotBehaviour {
 
     AD ad;
     DFAgentDescription[] magistrateAgents;
+    String idDistribuicao;
 
-    public RequestOJComposition(AD ad, DFAgentDescription[] magistrateAgents) {
+    public RequestOJComposition(AD ad, DFAgentDescription[] magistrateAgents, String idDistribuicao) {
         this.ad = ad;
         this.magistrateAgents = magistrateAgents;
+        this.idDistribuicao = idDistribuicao;
     }
 
     @Override
@@ -26,6 +28,7 @@ public class RequestOJComposition extends OneShotBehaviour {
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
         Envelope envelope = new Envelope();
         envelope.setComments(AM.REQUEST_COMPOSITION);
+        msg.setConversationId(idDistribuicao);
         msg.setEnvelope(envelope);
         for (DFAgentDescription dfd : magistrateAgents) {
             msg.addReceiver(dfd.getName());

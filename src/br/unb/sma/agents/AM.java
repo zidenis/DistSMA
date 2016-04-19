@@ -62,6 +62,7 @@ public class AM extends SMAgent {
     private void processRequestComposition(ACLMessage msg) {
         ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
         reply.addReceiver(msg.getSender());
+        reply.setConversationId(msg.getConversationId());
         Envelope envelope = new Envelope();
         envelope.setComments(AD.INFORM_COMPOSTION);
         reply.setEnvelope(envelope);
@@ -77,6 +78,7 @@ public class AM extends SMAgent {
         try {
             ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
             reply.addReceiver(msg.getSender());
+            reply.setConversationId(msg.getConversationId());
             Envelope envelope = new Envelope();
             ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
             boolean impedido = false;

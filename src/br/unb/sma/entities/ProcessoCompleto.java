@@ -151,14 +151,13 @@ public class ProcessoCompleto implements Serializable {
                     codProcRel = procRel.getCodProcesso();
                 }
                 TFaseProcessual fp = T_FASE_PROCESSUAL.as("fp");
-                FaseProcessual faseAtualProcRel = agent.getDbDSL()
+                List<FaseProcessual> faseAtualProcRel = agent.getDbDSL()
                         .select()
                         .from(fp)
                         .where(fp.COD_PROCESSO.equal(codProcRel))
                         .orderBy(fp.DTA_INICIO_FASE.desc())
-                        .limit(1)
-                        .fetchOneInto(FaseProcessual.class);
-                fasesProcRel.add(faseAtualProcRel);
+                        .fetchInto(FaseProcessual.class);
+                fasesProcRel.addAll(faseAtualProcRel);
             }
         }
     }

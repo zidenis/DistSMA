@@ -14,11 +14,13 @@ import jade.lang.acl.ACLMessage;
 public class RequestLawsuit extends OneShotBehaviour {
 
     AD ad;
-    DFAgentDescription[] protocolAgents;
+    DFAgentDescription protocolAgent;
+    String idDistribuicao;
 
-    public RequestLawsuit(AD ad, DFAgentDescription[] protocolAgents) {
+    public RequestLawsuit(AD ad, DFAgentDescription protocolAgent, String idDistribuicao) {
         this.ad = ad;
-        this.protocolAgents = protocolAgents;
+        this.protocolAgent = protocolAgent;
+        this.idDistribuicao = idDistribuicao;
     }
 
     @Override
@@ -26,10 +28,9 @@ public class RequestLawsuit extends OneShotBehaviour {
         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
         Envelope envelope = new Envelope();
         envelope.setComments(AP.REQUEST_LAWSUIT);
+        msg.setConversationId(idDistribuicao.toString());
         msg.setEnvelope(envelope);
-        for (DFAgentDescription dfd : protocolAgents) {
-            msg.addReceiver(dfd.getName());
-        }
+        msg.addReceiver(protocolAgent.getName());
         ad.send(msg);
     }
 }

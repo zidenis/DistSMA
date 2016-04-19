@@ -69,31 +69,37 @@ public class AP extends SMAgent {
     public void setProcesso(Processo processo) {
         if (processo != null) {
             this.processo = processo;
-            SwingUtilities.invokeLater(() -> {
-                if (gui.isDisplayable()) {
-                    view.setProcesso(processo.toString());
-                }
-            });
+            if (isGUIenable) {
+                SwingUtilities.invokeLater(() -> {
+                    if (gui.isDisplayable()) {
+                        view.setProcesso(processo.toString());
+                    }
+                });
+            }
         } else {
             this.processo = null;
-            SwingUtilities.invokeLater(() -> {
-                if (gui.isDisplayable()) {
-                    view.setProcesso("sem processos");
-                }
-            });
+            if (isGUIenable) {
+                SwingUtilities.invokeLater(() -> {
+                    if (gui.isDisplayable()) {
+                        view.setProcesso("sem processos");
+                    }
+                });
+            }
         }
     }
 
     @Override
     protected void processMessages(ACLMessage msg) {
         super.processMessages(msg);
-        switch (msg.getEnvelope().getComments()) {
-            case REQUEST_LAWSUIT:
-                processRequestLawsuit(msg);
-                break;
-            case INFORM_DISTRIBUTION:
-                processInformDistribution(msg);
-                break;
+        if (!(msg.getEnvelope() == null)) {
+            switch (msg.getEnvelope().getComments()) {
+                case REQUEST_LAWSUIT:
+                    processRequestLawsuit(msg);
+                    break;
+                case INFORM_DISTRIBUTION:
+                    processInformDistribution(msg);
+                    break;
+            }
         }
     }
 
@@ -122,7 +128,7 @@ public class AP extends SMAgent {
     private void processInformDistribution(ACLMessage msg) {
         try {
             HistDistribuicao distribuicao = (HistDistribuicao) msg.getContentObject();
-            addBehaviour(new UpdateLawsuitDB(this, distribuicao));
+            addBehaviour(new UpdateLawsuitDB(this, distribuicao), msg.getConversationId());
         } catch (UnreadableException e) {
             Utils.logError(getLocalName() + " : erro ao obter informação de distribuição");
         }
@@ -169,6 +175,7 @@ public class AP extends SMAgent {
                     .on(T_PROCESSO.COD_PROCESSO.equal(T_FASE_PROCESSUAL.COD_PROCESSO))
                     .where(T_PROCESSO.NUM_TRIBUNAL.equal(protocolo.getNumTribunal()))
                     .and(T_FASE_PROCESSUAL.COD_MAGISTRADO.isNull())
+                    .and(T_FASE_PROCESSUAL.COD_MOTIVO_REDIST.isNull())
                     .fetchOne()
                     .value1();
         }

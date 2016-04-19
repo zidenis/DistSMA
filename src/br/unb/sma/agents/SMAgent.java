@@ -31,9 +31,14 @@ public abstract class SMAgent extends Agent {
 
     CyclicBehaviour receiveMessages;
 
+    boolean isGUIenable;
+
     @Override
     protected void setup() {
-        loadGUI();
+        isGUIenable = AGP.HABILITAR_GUI;
+        if (isGUIenable) {
+            loadGUI();
+        }
         Utils.logInfo(getLocalName() + " - agente iniciado");
         //Retrieves startup arguments
         //Registering the provided services in the yellow pages catalogue (DF agent)
@@ -60,7 +65,9 @@ public abstract class SMAgent extends Agent {
         } catch (Exception e) {
             // Do nothing, db connection already closed
         }
-        closeGUI();
+        if (isGUIenable) {
+            closeGUI();
+        }
         Utils.logInfo(getLocalName() + " - agente finalizado");
         super.doDelete();
     }
@@ -96,7 +103,7 @@ public abstract class SMAgent extends Agent {
     public abstract String[] getServices();
 
     protected void processMessages(ACLMessage msg) {
-        String id = (msg.getConversationId() == null) ? "" : "(id: " + msg.getConversationId() + ") ";
+        String id = (msg.getConversationId() == null) ? "" : "(dist. id: " + msg.getConversationId() + ") ";
         Utils.logInfo(getLocalName() + " - mensagem " + id + "recebida de " + msg.getSender().getLocalName() + " : " + msg.getEnvelope().getComments());
     }
 
@@ -122,6 +129,10 @@ public abstract class SMAgent extends Agent {
         } else {
             addBehaviour(b);
         }
+    }
 
+    public void addBehaviour(Behaviour b, String seqDistribuicao) {
+        Utils.logInfo(getLocalName() + " - tarefa (dist. id: " + seqDistribuicao + ") : " + b.getClass().getSimpleName());
+        super.addBehaviour(b);
     }
 }

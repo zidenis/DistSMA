@@ -131,7 +131,7 @@ salience -1000
         buildDistribuicao($distribuicao, $pc, "N", nomeRegra, null, null, txtDistribuicao);
 end
 
-/* Helper function that define the properties of the distribution object
+/* Helper function that defines the properties of the distribution object
 */
 function void buildDistribuicao(HistDistribuicao histDistribuicao, ProcessoCompleto pc, String codTipoDist, String regraAplicada, String codMagistrado, String sigOJ, String txtDistribuicao) {
     LocalDateTime now = LocalDateTime.now();
@@ -144,7 +144,7 @@ function void buildDistribuicao(HistDistribuicao histDistribuicao, ProcessoCompl
     histDistribuicao.setSigOj(sigOJ);
 }
 
-/* Gets the list of codMagistrado for an especific OJ
+/* Gets the list of magistrates for an especific OJ
 */
 function List<String> makeListOfCodMagFromOJ(Set composicoesOJ, String sigOJ) {
         List<String> listCodMagsOJSorteado = new ArrayList<>();

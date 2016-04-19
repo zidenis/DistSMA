@@ -77,12 +77,12 @@ public class AD extends SMAgent {
     protected void setup() {
         distribuidor = (Distribuidor) getArguments()[0];
         super.setup();
-        seqDistribuicao = getNextSeqDistribuicaoFromDB();
+        seqDistribuicao = getCurrentSeqDistribuicaoFromDB();
         addBehaviour(new ObtainOJCompetencies(this));
         findAgents();
     }
 
-    private Integer getNextSeqDistribuicaoFromDB() {
+    private Integer getCurrentSeqDistribuicaoFromDB() {
         /*
         SELECT max(seq_distribuicao)
         FROM t_hist_distribuicao
@@ -138,14 +138,19 @@ public class AD extends SMAgent {
     }
 
     private void processInformNoLawsuit(ACLMessage msg) {
-        Utils.logInfo(msg.getSender().getLocalName() + " : não há processos à distribuir");
-//        List<DFAgentDescription> updatedProtocolAgents = new ArrayList<DFAgentDescription>();
-//        for (DFAgentDescription dfd : protocolAgents) {
-//            if (!msg.getSender().getLocalName().equals(dfd.getName().getLocalName())) {
-//                updatedProtocolAgents.add(dfd);
-//            }
-//        }
-//        protocolAgents = updatedProtocolAgents.toArray(protocolAgents);
+        protocolAgentsInProcessing.remove(msg.getSender());
+        List<DFAgentDescription> updatedProtocolAgents = new ArrayList<DFAgentDescription>();
+        for (DFAgentDescription dfd : protocolAgents) {
+            if (!msg.getSender().getLocalName().equals(dfd.getName().getLocalName())) {
+                updatedProtocolAgents.add(dfd);
+            }
+        }
+        protocolAgents = updatedProtocolAgents.toArray(protocolAgents);
+        if (isPlaying() && protocolAgentsInProcessing.size() == 0) {
+            if (protocolAgents.length != 0) {
+                requestLawsuit();
+            }
+        }
     }
 
     private void processInformComposition(ACLMessage msg) {
@@ -170,10 +175,9 @@ public class AD extends SMAgent {
         try {
             ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
             if (processosEmAnalise.add(pc.getProcesso().getCodProcesso())) {
-                seqDistribuicao++;
                 protocoloResponsavel.put(pc.getProcesso().getCodProcesso(), msg.getSender());
                 if (hasRelatedDistribution(pc)) {
-                    HistDistribuicao distribuicao = applyDistributionRules(pc);
+                    HistDistribuicao distribuicao = applyDistributionRules(pc, msg.getConversationId());
                     requestAplicationOfDistribution(distribuicao, msg.getSender());
                 } else {
                     Set<String> magistradosDisponiveis = new HashSet<>();
@@ -182,9 +186,10 @@ public class AD extends SMAgent {
                             magistradosDisponiveis.add(dfd.getName().getLocalName());
                         }
                         magistradosQuestionados.put(pc.getProcesso().getCodProcesso(), magistradosDisponiveis);
-                        addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents, seqDistribuicao.toString()));
+                        addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents, msg.getConversationId()), msg.getConversationId());
                     } else {
                         Utils.logInfo(getLocalName() + " - não há MA disponíveis");
+                        protocolAgentsInProcessing.remove(msg.getSender());
                         processosEmAnalise.remove(pc.getProcesso().getCodProcesso());
                     }
                 }
@@ -196,12 +201,12 @@ public class AD extends SMAgent {
         }
     }
 
-    private HistDistribuicao applyDistributionRules(ProcessoCompleto pc) {
+    private HistDistribuicao applyDistributionRules(ProcessoCompleto pc, String seqDistribuicao) {
         KnowledgeBase kbase = buildDroolsKnowledgeBase();
         StatefulKnowledgeSession ksession = kbase.newStatefulKnowledgeSession();
         HistDistribuicao distribuicao = new HistDistribuicao();
         distribuicao.setCodDistribuidor(distribuidor.getCodDistribuidor());
-        distribuicao.setSeqDistribuicao(seqDistribuicao++);
+        distribuicao.setSeqDistribuicao(Integer.valueOf(seqDistribuicao));
         ksession.insert(distribuicao);
         ksession.insert(pc);
         for (Competencia competencia : competencias) ksession.insert(competencia);
@@ -267,7 +272,7 @@ public class AD extends SMAgent {
                 }
             }
             if (magistradosQuestionados.get(codProcesso).size() == 0) {
-                HistDistribuicao distribuicao = applyDistributionRules(pc);
+                HistDistribuicao distribuicao = applyDistributionRules(pc, msg.getConversationId());
                 AID protocolAgentReceiver = protocoloResponsavel.get(codProcesso);
                 requestAplicationOfDistribution(distribuicao, protocolAgentReceiver);
             }
@@ -279,8 +284,9 @@ public class AD extends SMAgent {
     private void requestAplicationOfDistribution(HistDistribuicao distribuicao, AID protocolAgentReceiver) {
         //Utils.logInfo(getLocalName() + " Distribuir para " + protocolAgentReceiver.getLocalName() + ": " + distribuicao);
         if (distribuicao != null) {
-            addBehaviour(new UpdateDistributionDB(this, distribuicao));
-            addBehaviour(new InformDistribution(this, distribuicao, protocolAgentReceiver, seqDistribuicao.toString()));
+            String distribuicaoId = distribuicao.getSeqDistribuicao().toString();
+            addBehaviour(new UpdateDistributionDB(this, distribuicao), distribuicaoId);
+            addBehaviour(new InformDistribution(this, distribuicao, protocolAgentReceiver, distribuicaoId), distribuicaoId);
         }
         processosEmAnalise.remove(distribuicao.getCodProcesso());
         protocolAgentsInProcessing.remove(protocolAgentReceiver);
@@ -358,7 +364,9 @@ public class AD extends SMAgent {
         for (DFAgentDescription dfd : protocolAgents) {
             if (!protocolAgentsInProcessing.contains(dfd.getName())) {
                 protocolAgentsInProcessing.add(dfd.getName());
-                addBehaviour(new RequestLawsuit(this, dfd, seqDistribuicao.toString()));
+                seqDistribuicao++;
+                Utils.logInfo(getLocalName() + " - distribuicao (dist. id : " + seqDistribuicao + ") : iniciada");
+                addBehaviour(new RequestLawsuit(this, dfd, seqDistribuicao.toString()), seqDistribuicao.toString());
             }
         }
         if (protocolAgents.length == 0) {

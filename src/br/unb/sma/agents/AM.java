@@ -62,7 +62,7 @@ public class AM extends SMAgent {
     private void processRequestComposition(ACLMessage msg) {
         ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
         reply.addReceiver(msg.getSender());
-        reply.setConversationId(msg.getConversationId());
+        //reply.setConversationId(msg.getConversationId());
         Envelope envelope = new Envelope();
         envelope.setComments(AD.INFORM_COMPOSTION);
         reply.setEnvelope(envelope);
@@ -153,34 +153,42 @@ public class AM extends SMAgent {
 
     public void setComposicaoOjList(List<ComposicaoOj> composicaoOjList) {
         this.composicaoOjList = composicaoOjList;
-        SwingUtilities.invokeLater(() -> {
-            view.setComposicaoOJ(Utils.join(composicaoOjList.listIterator(), "\n"));
-            gui.pack();
-        });
+        if (isGUIenable) {
+            SwingUtilities.invokeLater(() -> {
+                view.setComposicaoOJ(Utils.join(composicaoOjList.listIterator(), "\n"));
+                gui.pack();
+            });
+        }
     }
 
     public void setImpedimentosProcessos(Set<Long> impedimentosProcessos) {
         this.impedimentosProcessos = impedimentosProcessos;
-        SwingUtilities.invokeLater(() -> {
-            view.setQtdProcImped(String.valueOf(impedimentosProcessos.size()));
-            gui.pack();
-        });
+        if (isGUIenable) {
+            SwingUtilities.invokeLater(() -> {
+                view.setQtdProcImped(String.valueOf(impedimentosProcessos.size()));
+                gui.pack();
+            });
+        }
     }
 
     public void setImpedimentosPartes(Set<Long> impedimentosPartes) {
         this.impedimentosPartes = impedimentosPartes;
-        SwingUtilities.invokeLater(() -> {
-            view.setQtdParteImped(String.valueOf(impedimentosPartes.size()));
-            gui.pack();
-        });
+        if (isGUIenable) {
+            SwingUtilities.invokeLater(() -> {
+                view.setQtdParteImped(String.valueOf(impedimentosPartes.size()));
+                gui.pack();
+            });
+        }
     }
 
     public void setImpedimentosAdvogados(Set<Integer> impedimentosAdvogados) {
         this.impedimentosAdvogados = impedimentosAdvogados;
-        SwingUtilities.invokeLater(() -> {
-            view.setQtdAdvImped(String.valueOf(impedimentosAdvogados.size()));
-            gui.pack();
-        });
+        if (isGUIenable) {
+            SwingUtilities.invokeLater(() -> {
+                view.setQtdAdvImped(String.valueOf(impedimentosAdvogados.size()));
+                gui.pack();
+            });
+        }
     }
 
     public Magistrado getMagistrado() {

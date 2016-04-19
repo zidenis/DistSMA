@@ -29,6 +29,7 @@ public class AGPview {
     private JScrollPane paneAD;
     private JButton encerrarSMA;
     private JButton iniciarTodosButton;
+    private JCheckBox guiCheck;
     private MyListModel<Protocolo> listAPModel;
     private MyListModel<Distribuidor> listADModel;
     private MyListModel<Magistrado> listAMModel;
@@ -49,6 +50,13 @@ public class AGPview {
         desativarAM.addActionListener(e -> desativarAMselecionado());
         encerrarSMA.addActionListener(e -> encerrarSMA());
         iniciarTodosButton.addActionListener(e -> iniciarTodos());
+        guiCheck.setSelected(AGP.HABILITAR_GUI);
+        guiCheck.addActionListener(e -> guiCheckClicked());
+    }
+
+    private void guiCheckClicked() {
+        AGP.HABILITAR_GUI = !AGP.HABILITAR_GUI;
+        guiCheck.setSelected(AGP.HABILITAR_GUI);
     }
 
     public JPanel getForm() {

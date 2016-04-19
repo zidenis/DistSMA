@@ -1,10 +1,7 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.AGPview;
-import br.unb.sma.behaviors.ActivateAgent;
-import br.unb.sma.behaviors.DeactivateAgent;
-import br.unb.sma.behaviors.GetAgentsInfo;
-import br.unb.sma.behaviors.ShutdownSMA;
+import br.unb.sma.behaviors.*;
 import br.unb.sma.entities.AgentEntity;
 import br.unb.sma.utils.Utils;
 import jade.content.lang.sl.SLCodec;
@@ -22,17 +19,18 @@ public class AGP extends SMAgent {
     public static final String ATIVADO = "ativado";
     public static final String DESATIVADO = "desativ.";
     public static final String LOADED = "";
-
+    public static boolean HABILITAR_GUI = true;
     private JFrame gui;
     private AGP agent = this;
     private AGPview view;
 
     protected void setup() {
+        loadGUI();
+        Utils.logInfo(getLocalName() + " - agente iniciado");
         getContentManager().registerLanguage(new SLCodec(), FIPANames.ContentLanguage.FIPA_SL);
         getContentManager().registerOntology(JADEManagementOntology.getInstance());
+        addBehaviour(new DFRegistration(this));
         addBehaviour(new GetAgentsInfo(agent));
-        super.setup();
-        removeBehaviour(receiveMessages);
     }
 
     public void activateAgent(AgentEntity agentEntity) {

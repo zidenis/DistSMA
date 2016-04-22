@@ -1,7 +1,7 @@
 package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AGP;
-import br.unb.sma.agents.SMAgent;
+import br.unb.sma.agents.LawDisTrAgent;
 import br.unb.sma.entities.AgentEntity;
 import br.unb.sma.utils.Utils;
 import jade.content.onto.basic.Action;
@@ -22,9 +22,9 @@ import javax.swing.*;
 public class ActivateAgent extends OneShotBehaviour {
 
     AgentEntity agentEntity;
-    SMAgent agent;
+    LawDisTrAgent agent;
 
-    public ActivateAgent(SMAgent agent, AgentEntity agentEntity) {
+    public ActivateAgent(LawDisTrAgent agent, AgentEntity agentEntity) {
         super(agent);
         this.agent = agent;
         this.agentEntity = agentEntity;
@@ -48,7 +48,7 @@ public class ActivateAgent extends OneShotBehaviour {
             agent.addBehaviour(new AchieveREInitiator(myAgent, request) {
                 @Override
                 protected void handleInform(ACLMessage inform) {
-                    agentEntity.setStatus(AGP.ATIVADO);
+                    agentEntity.setStatus(AGP.STATUS_ENABLED);
                     SwingUtilities.invokeLater(() -> ((AGP) myAgent).getView().update());
                     myAgent.addBehaviour(new InformPlataformChange());
                 }
@@ -58,7 +58,7 @@ public class ActivateAgent extends OneShotBehaviour {
                     Utils.logError(myAgent.getLocalName() + " - erro ao iniciar o " + agentEntity.getAgentName());
                     Utils.logError(failure.getContent());
                 }
-            }, true);
+            });
         } catch (Exception e) {
             Utils.logError(myAgent.getLocalName() + " - erro ao iniciar " + agentEntity.getAgentName());
             e.printStackTrace();

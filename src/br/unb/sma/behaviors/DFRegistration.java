@@ -1,6 +1,6 @@
 package br.unb.sma.behaviors;
 
-import br.unb.sma.agents.SMAgent;
+import br.unb.sma.agents.LawDisTrAgent;
 import br.unb.sma.utils.Utils;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.DFService;
@@ -14,27 +14,31 @@ import jade.domain.FIPAException;
  */
 public class DFRegistration extends OneShotBehaviour {
 
-    SMAgent agent;
+    LawDisTrAgent agent;
+    String serviceType;
+    String[] services;
 
-    public DFRegistration(SMAgent agent) {
+    public DFRegistration(LawDisTrAgent agent, String serviceType, String[] services) {
         super(agent);
         this.agent = agent;
+        this.serviceType = serviceType;
+        this.services = services;
     }
 
     @Override
     public void action() {
         try {
             DFAgentDescription dfd = new DFAgentDescription();
-            dfd.setName(myAgent.getAID());
-            for (String service : agent.getServices()) {
+            dfd.setName(agent.getAID());
+            for (String service : services) {
                 ServiceDescription sd = new ServiceDescription();
-                sd.setType(agent.getServiceType());
+                sd.setType(serviceType);
                 sd.setName(service);
                 dfd.addServices(sd);
             }
-            DFService.register(myAgent, dfd);
+            DFService.register(agent, dfd);
         } catch (FIPAException fe) {
-            Utils.logError(myAgent.getLocalName() + " - erro ao registrar serviço no DF");
+            Utils.logError(agent.getLocalName() + " - erro ao registrar serviço no DF");
         }
     }
 }

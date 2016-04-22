@@ -8,7 +8,7 @@ import javax.swing.*;
  * Created by zidenis.
  * 17-03-2016
  */
-public class APview {
+public class APview implements AgentView {
     private AP agent;
     private JPanel form;
     private JLabel processo;

@@ -8,7 +8,7 @@ import javax.swing.*;
  * Created by zidenis.
  * 19-03-2016
  */
-public class AMview {
+public class AMview implements AgentView {
     private JLabel composicaoOJlabel;
     private JTextArea composicaoOJ;
     private JLabel qtdProcImpedLabel;

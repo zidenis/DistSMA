@@ -1,7 +1,7 @@
 package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AGP;
-import br.unb.sma.agents.SMAgent;
+import br.unb.sma.agents.LawDisTrAgent;
 import br.unb.sma.entities.AgentEntity;
 import br.unb.sma.utils.Utils;
 import jade.content.onto.basic.Action;
@@ -22,9 +22,9 @@ import javax.swing.*;
 public class DeactivateAgent extends OneShotBehaviour {
 
     AgentEntity agentEntity;
-    SMAgent agent;
+    LawDisTrAgent agent;
 
-    public DeactivateAgent(SMAgent agent, AgentEntity agentEntity) {
+    public DeactivateAgent(LawDisTrAgent agent, AgentEntity agentEntity) {
         super(agent);
         this.agent = agent;
         this.agentEntity = agentEntity;
@@ -46,7 +46,7 @@ public class DeactivateAgent extends OneShotBehaviour {
             agent.addBehaviour(new AchieveREInitiator(myAgent, request) {
                 @Override
                 protected void handleInform(ACLMessage inform) {
-                    agentEntity.setStatus(AGP.DESATIVADO);
+                    agentEntity.setStatus(AGP.STATUS_DISABLE);
                     SwingUtilities.invokeLater(() -> ((AGP) myAgent).getView().update());
                     myAgent.addBehaviour(new InformPlataformChange());
                 }
@@ -56,7 +56,7 @@ public class DeactivateAgent extends OneShotBehaviour {
                     Utils.logError(myAgent.getLocalName() + " - erro ao desativar " + agentEntity.getAgentName());
                     Utils.logError(failure.getContent());
                 }
-            }, true);
+            });
         } catch (Exception e) {
             Utils.logError(myAgent.getLocalName() + " - erro ao desativar " + agentEntity.getAgentName());
             e.printStackTrace();

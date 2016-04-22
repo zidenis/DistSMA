@@ -1,6 +1,6 @@
 package br.unb.sma.entities;
 
-import br.unb.sma.agents.SMAgent;
+import br.unb.sma.agents.LawDisTrAgent;
 import br.unb.sma.database.tables.*;
 
 import java.io.Serializable;
@@ -16,7 +16,7 @@ import static br.unb.sma.database.Tables.*;
 public class ProcessoCompleto implements Serializable {
 
     private Processo processo;
-    private transient SMAgent agent;
+    private transient LawDisTrAgent agent;
 
     private long codProc;
     private List<Parte> partes;
@@ -26,7 +26,7 @@ public class ProcessoCompleto implements Serializable {
     private FaseProcessual faseAnterior;
     private List<FaseProcessual> fasesProcRel;
 
-    public ProcessoCompleto(Processo processo, SMAgent agent) {
+    public ProcessoCompleto(Processo processo, LawDisTrAgent agent) {
         this.processo = processo;
         codProc = processo.getCodProcesso();
         this.agent = agent;
@@ -181,7 +181,7 @@ public class ProcessoCompleto implements Serializable {
         return processo;
     }
 
-    public SMAgent getAgent() {
+    public LawDisTrAgent getAgent() {
         return agent;
     }
 

@@ -12,7 +12,7 @@ import java.util.List;
  * Created by zidenis.
  * 16-03-2016
  */
-public class AGPview {
+public class AGPview implements AgentView {
     final AGP agent;
     private JList listAP;
     private JList listAM;
@@ -50,13 +50,13 @@ public class AGPview {
         desativarAM.addActionListener(e -> desativarAMselecionado());
         encerrarSMA.addActionListener(e -> encerrarSMA());
         iniciarTodosButton.addActionListener(e -> iniciarTodos());
-        guiCheck.setSelected(AGP.HABILITAR_GUI);
+        guiCheck.setSelected(AGP.ENABLE_GUI);
         guiCheck.addActionListener(e -> guiCheckClicked());
     }
 
     private void guiCheckClicked() {
-        AGP.HABILITAR_GUI = !AGP.HABILITAR_GUI;
-        guiCheck.setSelected(AGP.HABILITAR_GUI);
+        AGP.ENABLE_GUI = !AGP.ENABLE_GUI;
+        guiCheck.setSelected(AGP.ENABLE_GUI);
     }
 
     public JPanel getForm() {
@@ -77,7 +77,7 @@ public class AGPview {
 
     private void ativarAPselecionado() {
         for (Protocolo protocolo : (List<Protocolo>) listAP.getSelectedValuesList()) {
-            if (!protocolo.getStatus().equals(AGP.ATIVADO)) {
+            if (!protocolo.getStatus().equals(AGP.STATUS_ENABLED)) {
                 agent.activateAgent(protocolo);
             }
         }
@@ -86,7 +86,7 @@ public class AGPview {
     private void desativarAPselecionado() {
         for (Protocolo protocolo : (List<Protocolo>) listAP.getSelectedValuesList()) {
             String status = protocolo.getStatus();
-            if (status.equals(AGP.ATIVADO)) {
+            if (status.equals(AGP.STATUS_ENABLED)) {
                 agent.deactivateAgent(protocolo);
             }
         }
@@ -94,7 +94,7 @@ public class AGPview {
 
     private void ativarADselecionado() {
         for (Distribuidor distribuidor : (List<Distribuidor>) listAD.getSelectedValuesList()) {
-            if (!distribuidor.getStatus().equals(AGP.ATIVADO)) {
+            if (!distribuidor.getStatus().equals(AGP.STATUS_ENABLED)) {
                 agent.activateAgent(distribuidor);
             }
         }
@@ -103,7 +103,7 @@ public class AGPview {
     private void desativarADselecionado() {
         for (Distribuidor distribuidor : (List<Distribuidor>) listAD.getSelectedValuesList()) {
             String status = distribuidor.getStatus();
-            if (status.equals(AGP.ATIVADO)) {
+            if (status.equals(AGP.STATUS_ENABLED)) {
                 agent.deactivateAgent(distribuidor);
             }
         }
@@ -111,7 +111,7 @@ public class AGPview {
 
     private void ativarAMselecionado() {
         for (Magistrado magistrado : (List<Magistrado>) listAM.getSelectedValuesList()) {
-            if (!magistrado.getStatus().equals(AGP.ATIVADO)) {
+            if (!magistrado.getStatus().equals(AGP.STATUS_ENABLED)) {
                 agent.activateAgent(magistrado);
             }
         }
@@ -120,7 +120,7 @@ public class AGPview {
     private void desativarAMselecionado() {
         for (Magistrado magistrado : (List<Magistrado>) listAM.getSelectedValuesList()) {
             String status = magistrado.getStatus();
-            if (status.equals(AGP.ATIVADO)) {
+            if (status.equals(AGP.STATUS_ENABLED)) {
                 agent.deactivateAgent(magistrado);
             }
         }

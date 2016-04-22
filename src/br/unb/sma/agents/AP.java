@@ -8,42 +8,45 @@ import br.unb.sma.entities.Processo;
 import br.unb.sma.entities.ProcessoCompleto;
 import br.unb.sma.entities.Protocolo;
 import br.unb.sma.utils.Utils;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 
 import javax.swing.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.IOException;
 
 import static br.unb.sma.database.Tables.T_FASE_PROCESSUAL;
 import static br.unb.sma.database.Tables.T_PROCESSO;
+
+
 /**
- * Created by zidenis.
- * 16-03-2016
+ * AP (Agente de Protocolo - Protocol Agent)
+ * @author zidenis
+ * @version 2016.4.22
  */
-public class AP extends SMAgent {
+public class AP extends LawDisTrAgent {
 
     public static final String SERVICE_TYPE = "AP";
     public static final String REQUEST_LAWSUIT = "request-lawsuit";
     public static final String INFORM_DISTRIBUTION = "inform-distribution";
     private final String[] SERVICES = {AP.REQUEST_LAWSUIT, INFORM_DISTRIBUTION};
 
-    Protocolo protocolo;
-    Processo processo;
-    Integer qtdProcessos;
-
-    private JFrame gui;
-    private AP agent = this;
-    private APview view;
+    private Protocolo protocol;
+    private Processo lawsuit;
+    private Integer lawsuitQty;
+    private AP ap = this;
+    private APview view = new APview(ap);
 
     @Override
     protected void setup() {
-        protocolo = (Protocolo) getArguments()[0];
+        protocol = (Protocolo) getArguments()[0];
         super.setup();
-        addBehaviour(new ObtainLawsuitAwaintingDistribution(agent));
+        addBehaviour(new ObtainLawsuitAwaintingDistribution(ap));
+    }
+
+    @Override
+    public APview getView() {
+        return view;
     }
 
     @Override
@@ -56,41 +59,14 @@ public class AP extends SMAgent {
         return SERVICES;
     }
 
+    /**
+     * Deals with the received messages by AP agents
+     *
+     * @param msg the message that will be processed
+     */
     @Override
-    public CyclicBehaviour receiveMessages() {
-        return receiveMessages;
-    }
-
-    @Override
-    public String toString() {
-        return protocolo.getNomProtocolo() + " (" + getAgentState().toString() + ")";
-    }
-
-    public void setProcesso(Processo processo) {
-        if (processo != null) {
-            this.processo = processo;
-            if (isGUIenable) {
-                SwingUtilities.invokeLater(() -> {
-                    if (gui.isDisplayable()) {
-                        view.setProcesso(processo.toString());
-                    }
-                });
-            }
-        } else {
-            this.processo = null;
-            if (isGUIenable) {
-                SwingUtilities.invokeLater(() -> {
-                    if (gui.isDisplayable()) {
-                        view.setProcesso("sem processos");
-                    }
-                });
-            }
-        }
-    }
-
-    @Override
-    protected void processMessages(ACLMessage msg) {
-        super.processMessages(msg);
+    protected void processReceivedMessage(ACLMessage msg) {
+        super.processReceivedMessage(msg);
         if (!(msg.getEnvelope() == null)) {
             switch (msg.getEnvelope().getComments()) {
                 case REQUEST_LAWSUIT:
@@ -103,13 +79,17 @@ public class AP extends SMAgent {
         }
     }
 
+    /**
+     * Process the Lawsuit Request message
+     * @param msg the request message
+     */
     private void processRequestLawsuit(ACLMessage msg) {
         ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
         reply.addReceiver(msg.getSender());
         reply.setConversationId(msg.getConversationId());
         Envelope envelope = new Envelope();
-        if (processo != null) {
-            ProcessoCompleto pc = new ProcessoCompleto(processo, this);
+        if (lawsuit != null) {
+            ProcessoCompleto pc = new ProcessoCompleto(lawsuit, this);
             envelope.setComments(AD.INFORM_LAWSUIT);
             reply.setEnvelope(envelope);
             try {
@@ -125,72 +105,74 @@ public class AP extends SMAgent {
         }
     }
 
+    /**
+     * Process the inform of a Lawsuit Distribution
+     * @param msg the inform distribution message
+     */
     private void processInformDistribution(ACLMessage msg) {
         try {
-            HistDistribuicao distribuicao = (HistDistribuicao) msg.getContentObject();
-            addBehaviour(new UpdateLawsuitDB(this, distribuicao), msg.getConversationId());
+            HistDistribuicao distribution = (HistDistribuicao) msg.getContentObject();
+            addBehaviour(new UpdateLawsuitDB(this, distribution), msg.getConversationId());
         } catch (UnreadableException e) {
             Utils.logError(getLocalName() + " : erro ao obter informação de distribuição");
         }
     }
 
-    protected void loadGUI() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    //Loading the GUI
-                    gui = new JFrame("AP : " + protocolo.getNomProtocolo());
-                    view = new APview(agent);
-                    gui.setContentPane(view.getForm());
-                    gui.pack();
-                    gui.setLocation(Utils.guiLocation("AP"));
-                    gui.setVisible(true);
-                    gui.addWindowListener(new WindowAdapter() {
-                        @Override
-                        public void windowClosing(WindowEvent e) {
-                            super.windowClosing(e);
-                        }
-                    });
-                } catch (Exception e) {
-                    Utils.logError(getLocalName() + " : erro ao criar GUI");
-                    e.printStackTrace();
-                }
+    /**
+     * Defines the actual lawsuit that will be handled by the AP agent and updates its GUI
+     *
+     * @param lawsuit the lawsuit
+     */
+    public void setLawsuit(Processo lawsuit) {
+        if (lawsuit != null) {
+            this.lawsuit = lawsuit;
+            if (isGUIEnabled) {
+                SwingUtilities.invokeLater(() -> {
+                    if (gui.isDisplayable()) {
+                        view.setProcesso(lawsuit.toString());
+                        view.setQtdProcessosFila(getLawsuitQty());
+                    }
+                });
             }
-
-        });
+        } else {
+            this.lawsuit = null;
+            if (isGUIEnabled) {
+                SwingUtilities.invokeLater(() -> {
+                    if (gui.isDisplayable()) {
+                        view.setProcesso("sem processos");
+                        view.setQtdProcessosFila(getLawsuitQty());
+                    }
+                });
+            }
+        }
     }
 
-    @Override
-    protected JFrame getGUI() {
-        return gui;
-    }
-
-    private Integer getQtdProcessos() {
-        if (qtdProcessos == null) {
-            qtdProcessos = getDbDSL()
+    /**
+     * Gets the total of lawsuits awainting for distribution on lawsuits database
+     *
+     * @return the number of lawsuits
+     */
+    private Integer getLawsuitQty() {
+        if (lawsuitQty == null) {
+            lawsuitQty = getDbDSL()
                     .selectCount()
                     .from(T_PROCESSO)
                     .innerJoin(T_FASE_PROCESSUAL)
                     .on(T_PROCESSO.COD_PROCESSO.equal(T_FASE_PROCESSUAL.COD_PROCESSO))
-                    .where(T_PROCESSO.NUM_TRIBUNAL.equal(protocolo.getNumTribunal()))
+                    .where(T_PROCESSO.NUM_TRIBUNAL.equal(protocol.getNumTribunal()))
                     .and(T_FASE_PROCESSUAL.COD_MAGISTRADO.isNull())
                     .and(T_FASE_PROCESSUAL.COD_MOTIVO_REDIST.isNull())
                     .fetchOne()
                     .value1();
         }
-        return qtdProcessos--;
+        return lawsuitQty--;
     }
 
-    public void updateQtdProcessos() {
-        if (view != null) {
-            if (view.getForm().isDisplayable()) {
-                view.setQtdProcessosFila(getQtdProcessos());
-            }
-        }
-    }
-
+    /**
+     * Gets the number of the court corresponding to the AP agent
+     * @return the number of the court
+     */
     public byte getNumTribunal() {
-        return protocolo.getNumTribunal();
+        return protocol.getNumTribunal();
     }
 }

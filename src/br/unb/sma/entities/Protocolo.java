@@ -21,7 +21,7 @@ public class Protocolo implements Serializable, AgentEntity {
     private String nomProtocolo;
     private Byte numTribunal;
 
-    private String status = AGP.LOADED;
+    private String status = AGP.STATUS_LOADED;
 
     public Protocolo() {
     }
@@ -44,7 +44,7 @@ public class Protocolo implements Serializable, AgentEntity {
 
     @Override
     public String toString() {
-        return nomProtocolo + (status.equals(AGP.LOADED) ? status : " (" + status + ")");
+        return nomProtocolo + (status.equals(AGP.STATUS_LOADED) ? status : " (" + status + ")");
     }
 
     @Override

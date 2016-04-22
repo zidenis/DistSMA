@@ -1,101 +1,79 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.AGPview;
-import br.unb.sma.behaviors.*;
+import br.unb.sma.behaviors.ActivateAgent;
+import br.unb.sma.behaviors.DeactivateAgent;
+import br.unb.sma.behaviors.GetAgentsInfo;
+import br.unb.sma.behaviors.ShutdownSMA;
 import br.unb.sma.entities.AgentEntity;
-import br.unb.sma.utils.Utils;
 import jade.content.lang.sl.SLCodec;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPANames;
 import jade.domain.JADEAgentManagement.JADEManagementOntology;
-import jade.lang.acl.ACLMessage;
 
-import javax.swing.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+/**
+ * AGP (Agente Gestor da Plataforma - Plataform Management Agent)
+ *
+ * @author zidenis
+ * @version 2016.4.22
+ */
+public class AGP extends LawDisTrAgent {
 
-public class AGP extends SMAgent {
+    public static final String STATUS_ENABLED = "ativado";
+    public static final String STATUS_DISABLE = "desativ.";
+    public static final String STATUS_LOADED = "";
+    public static final String SERVICE_TYPE = "AGP";
+    public static boolean ENABLE_GUI = true;
+    private final String[] SERVICES = {""};
 
-    public static final String ATIVADO = "ativado";
-    public static final String DESATIVADO = "desativ.";
-    public static final String LOADED = "";
-    public static boolean HABILITAR_GUI = true;
-    private JFrame gui;
-    private AGP agent = this;
-    private AGPview view;
+    private AGP agp = this;
+    private AGPview view = new AGPview(agp);
 
     protected void setup() {
-        loadGUI();
-        Utils.logInfo(getLocalName() + " - agente iniciado");
+        super.setup();
+        removeBehaviour(receiveMessages); // this agent does not need to receive messages
         getContentManager().registerLanguage(new SLCodec(), FIPANames.ContentLanguage.FIPA_SL);
         getContentManager().registerOntology(JADEManagementOntology.getInstance());
-        addBehaviour(new DFRegistration(this));
-        addBehaviour(new GetAgentsInfo(agent));
+        addBehaviour(new GetAgentsInfo(agp));
     }
 
-    public void activateAgent(AgentEntity agentEntity) {
-        addBehaviour(new ActivateAgent(this, agentEntity));
-    }
-
-    public void deactivateAgent(AgentEntity agentEntity) {
-        addBehaviour(new DeactivateAgent(this, agentEntity));
-    }
-
-    public void shutdownSMA() {
-        addBehaviour(new ShutdownSMA());
-    }
-
+    @Override
     public AGPview getView() {
         return view;
     }
 
     @Override
-    protected void loadGUI() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    gui = new JFrame(getLocalName());
-                    view = new AGPview(agent);
-                    gui.setContentPane(view.getForm());
-                    gui.pack();
-                    gui.setLocation(900, 0);
-                    gui.setVisible(true);
-                    gui.addWindowListener(new WindowAdapter() {
-                        @Override
-                        public void windowClosing(WindowEvent e) {
-                            super.windowClosing(e);
-                        }
-                    });
-                } catch (Exception e) {
-                    Utils.logError(getLocalName() + " - erro ao criar GUI");
-                }
-            }
-        });
-    }
-
-    @Override
     public String getServiceType() {
-        return null;
+        return SERVICE_TYPE;
     }
 
     @Override
     public String[] getServices() {
-        return new String[0];
+        return SERVICES;
     }
 
-    @Override
-    protected void processMessages(ACLMessage msg) {
-        super.processMessages(msg);
+    /**
+     * Activates an agent on LawDisTrA
+     *
+     * @param agentEntity an entity that represents the agent
+     */
+    public void activateAgent(AgentEntity agentEntity) {
+        addBehaviour(new ActivateAgent(this, agentEntity));
     }
 
-    @Override
-    protected JFrame getGUI() {
-        return gui;
+    /**
+     * Deactivates an agent on LawDisTrA
+     *
+     * @param agentEntity an entity that represents the agent
+     */
+    public void deactivateAgent(AgentEntity agentEntity) {
+        addBehaviour(new DeactivateAgent(this, agentEntity));
     }
 
-    @Override
-    public CyclicBehaviour receiveMessages() {
-        return receiveMessages;
+    /**
+     * Turns off the LawDisTrA
+     */
+    public void shutdownSMA() {
+        addBehaviour(new ShutdownSMA());
     }
+
 }

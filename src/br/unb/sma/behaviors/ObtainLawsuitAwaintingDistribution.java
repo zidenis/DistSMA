@@ -16,12 +16,10 @@ import static br.unb.sma.database.Tables.T_PROCESSO;
 public class ObtainLawsuitAwaintingDistribution extends OneShotBehaviour {
 
     AP ap;
-    byte numTribunal;
 
     public ObtainLawsuitAwaintingDistribution(AP agent) {
         super(agent);
         ap = agent;
-        numTribunal = ap.getNumTribunal();
     }
 
     @Override
@@ -43,13 +41,12 @@ public class ObtainLawsuitAwaintingDistribution extends OneShotBehaviour {
                 .from(p)
                 .innerJoin(f)
                 .on(p.COD_PROCESSO.equal(f.COD_PROCESSO))
-                .where(p.NUM_TRIBUNAL.equal(numTribunal))
+                .where(p.NUM_TRIBUNAL.equal(ap.getNumTribunal()))
                 .and(f.COD_MAGISTRADO.isNull())
                 .and(f.COD_MOTIVO_REDIST.isNull())
                 .orderBy(p.DTA_AUTUACAO)
                 .limit(1)
                 .fetchOneInto(Processo.class);
-        ap.setProcesso(processo);
-        ap.updateQtdProcessos();
+        ap.setLawsuit(processo);
     }
 }

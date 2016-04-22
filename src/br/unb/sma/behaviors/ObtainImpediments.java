@@ -29,9 +29,9 @@ public class ObtainImpediments extends OneShotBehaviour {
          */
         Set<Long> impedimentos = am.getDbDSL().select(T_IMPEDIMENTO_PROCESSO.COD_PROCESSO)
                 .from(T_IMPEDIMENTO_PROCESSO)
-                .where(T_IMPEDIMENTO_PROCESSO.COD_MAGISTRADO.equal(am.getMagistrado().getCodMagistrado()))
+                .where(T_IMPEDIMENTO_PROCESSO.COD_MAGISTRADO.equal(am.getMagistrate().getCodMagistrado()))
                 .fetch().intoSet(T_IMPEDIMENTO_PROCESSO.COD_PROCESSO);
-        am.setImpedimentosProcessos(impedimentos);
+        am.setImpedimentsInLawsuits(impedimentos);
         /* Obter a relação de impedimentos quanto a processos para um determinado magistrado
         SELECT cod_parte
           FROM t_impedimento_parte
@@ -39,9 +39,9 @@ public class ObtainImpediments extends OneShotBehaviour {
          */
         Set<Integer> impedimentosAdv = am.getDbDSL().select(T_IMPEDIMENTO_ADVOGADO.NUM_ADVOGADO)
                 .from(T_IMPEDIMENTO_ADVOGADO)
-                .where(T_IMPEDIMENTO_ADVOGADO.COD_MAGISTRADO.equal(am.getMagistrado().getCodMagistrado()))
+                .where(T_IMPEDIMENTO_ADVOGADO.COD_MAGISTRADO.equal(am.getMagistrate().getCodMagistrado()))
                 .fetch().intoSet(T_IMPEDIMENTO_ADVOGADO.NUM_ADVOGADO);
-        am.setImpedimentosAdvogados(impedimentosAdv);
+        am.setImpedimentsRelatedToLawyers(impedimentosAdv);
         /* Obter a relação de impedimentos quanto a processos para um determinado magistrado
         SELECT cod_parte
           FROM t_impedimento_parte
@@ -49,9 +49,9 @@ public class ObtainImpediments extends OneShotBehaviour {
          */
         Set<Long> impedimentosParte = am.getDbDSL().select(T_IMPEDIMENTO_PARTE.COD_PARTE)
                 .from(T_IMPEDIMENTO_PARTE)
-                .where(T_IMPEDIMENTO_PARTE.COD_MAGISTRADO.equal(am.getMagistrado().getCodMagistrado()))
+                .where(T_IMPEDIMENTO_PARTE.COD_MAGISTRADO.equal(am.getMagistrate().getCodMagistrado()))
                 .fetch().intoSet(T_IMPEDIMENTO_PARTE.COD_PARTE);
-        am.setImpedimentosPartes(impedimentosParte);
+        am.setImpedimentsRelatedToParts(impedimentosParte);
 
     }
 }

@@ -5,7 +5,6 @@ import br.unb.sma.behaviors.*;
 import br.unb.sma.entities.*;
 import br.unb.sma.utils.Utils;
 import jade.core.AID;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
@@ -19,36 +18,32 @@ import org.kie.internal.builder.KnowledgeBuilderFactory;
 import org.kie.internal.io.ResourceFactory;
 import org.kie.internal.runtime.StatefulKnowledgeSession;
 
-import javax.swing.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.*;
-import java.util.Timer;
 
 import static br.unb.sma.database.Tables.T_HIST_DISTRIBUICAO;
 
 /**
- * Created by zidenis.
- * 16-03-2016
+ * AD (Agente de Distribuição - Distribution Agent)
+ * @author zidenis
+ * @version 2016.4.22
  */
-public class AD extends SMAgent {
+public class AD extends LawDisTrAgent {
 
     public static final String SERVICE_TYPE = "AD";
     public static final String DISTRIBUTE = "distribute";
+    public static final String INFORM_PLATAFORM_CHANGE = "inform-plataform-change";
     public static final String INFORM_COMPOSTION = "inform-composition";
     public static final String INFORM_LAWSUIT = "inform-lawsuit";
-    public static final String INFORM_PLATAFORM_CHANGE = "inform-plataform-change";
+    public static final String INFORM_NO_LAWSUIT = "inform-no-lawsuit";
     public static final String INFORM_IMPEDIMENT = "inform-impediment";
     public static final String INFORM_COMPETENCE = "inform-competence";
-    public static final String INFORM_NO_LAWSUIT = "inform-no-lawsuit";
     private final String[] SERVICES = {DISTRIBUTE};
-    boolean findAgentsMutex = false;
+
+    private Distribuidor distributor;
+    private Integer distributionId;
+
+    private boolean findAgentsMutex = false;
     private boolean playing = false;
-    private Distribuidor distribuidor;
-    private Integer seqDistribuicao;
-    private JFrame gui;
-    private AD agent = this;
-    private ADview view;
     private List<Competencia> competencias;
     private Map<String, List<ComposicaoOj>> composicoes = new HashMap<>();
     private DFAgentDescription[] protocolAgents;
@@ -58,6 +53,8 @@ public class AD extends SMAgent {
     private Map<Long, AID> protocoloResponsavel = new HashMap<>(); // "Código do Processo" -> Agente Protocolo
     private Set<Long> processosEmAnalise = new HashSet<>(); // Para evitar problemas de concorrência
     private Set<AID> protocolAgentsInProcessing = new HashSet<>();
+    private AD ad = this;
+    private ADview view = new ADview(ad);
 
     private static KnowledgeBase buildDroolsKnowledgeBase() {
         KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
@@ -75,31 +72,16 @@ public class AD extends SMAgent {
 
     @Override
     protected void setup() {
-        distribuidor = (Distribuidor) getArguments()[0];
+        distributor = (Distribuidor) getArguments()[0];
         super.setup();
-        seqDistribuicao = getCurrentSeqDistribuicaoFromDB();
+        distributionId = getCurrentSeqDistribuicaoFromDB();
         addBehaviour(new ObtainOJCompetencies(this));
         findAgents();
     }
 
-    private Integer getCurrentSeqDistribuicaoFromDB() {
-        /*
-        SELECT max(seq_distribuicao)
-        FROM t_hist_distribuicao
-        WHERE cod_distribuidor = 'AD01'
-         */
-        Integer actualSeq = getDbDSL()
-                .select(T_HIST_DISTRIBUICAO.SEQ_DISTRIBUICAO.max())
-                .from(T_HIST_DISTRIBUICAO)
-                .where(T_HIST_DISTRIBUICAO.COD_DISTRIBUIDOR.equal(distribuidor.getCodDistribuidor()))
-                .fetchOne().value1();
-        if (actualSeq == null) actualSeq = 0;
-        return actualSeq;
-    }
-
     @Override
-    public String toString() {
-        return getLocalName() + " (" + getAgentState().toString() + ")";
+    public ADview getView() {
+        return view;
     }
 
     @Override
@@ -113,8 +95,8 @@ public class AD extends SMAgent {
     }
 
     @Override
-    protected void processMessages(ACLMessage msg) {
-        super.processMessages(msg);
+    protected void processReceivedMessage(ACLMessage msg) {
+        super.processReceivedMessage(msg);
         switch (msg.getEnvelope().getComments()) {
             case INFORM_COMPOSTION:
                 processInformComposition(msg);
@@ -135,6 +117,21 @@ public class AD extends SMAgent {
                 processInformNoLawsuit(msg);
                 break;
         }
+    }
+
+    private Integer getCurrentSeqDistribuicaoFromDB() {
+        /*
+        SELECT max(seq_distribuicao)
+        FROM t_hist_distribuicao
+        WHERE cod_distribuidor = 'AD01'
+         */
+        Integer actualSeq = getDbDSL()
+                .select(T_HIST_DISTRIBUICAO.SEQ_DISTRIBUICAO.max())
+                .from(T_HIST_DISTRIBUICAO)
+                .where(T_HIST_DISTRIBUICAO.COD_DISTRIBUIDOR.equal(distributor.getCodDistribuidor()))
+                .fetchOne().value1();
+        if (actualSeq == null) actualSeq = 0;
+        return actualSeq;
     }
 
     private void processInformNoLawsuit(ACLMessage msg) {
@@ -205,7 +202,7 @@ public class AD extends SMAgent {
         KnowledgeBase kbase = buildDroolsKnowledgeBase();
         StatefulKnowledgeSession ksession = kbase.newStatefulKnowledgeSession();
         HistDistribuicao distribuicao = new HistDistribuicao();
-        distribuicao.setCodDistribuidor(distribuidor.getCodDistribuidor());
+        distribuicao.setCodDistribuidor(distributor.getCodDistribuidor());
         distribuicao.setSeqDistribuicao(Integer.valueOf(seqDistribuicao));
         ksession.insert(distribuicao);
         ksession.insert(pc);
@@ -295,42 +292,6 @@ public class AD extends SMAgent {
         }
     }
 
-    protected void loadGUI() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    //Loading the GUI
-                    gui = new JFrame("AD : " + getLocalName());
-                    view = new ADview(agent);
-                    gui.setContentPane(view.getForm());
-                    gui.pack();
-                    gui.setLocation(Utils.guiLocation("AD"));
-                    gui.setVisible(true);
-                    gui.addWindowListener(new WindowAdapter() {
-                        @Override
-                        public void windowClosing(WindowEvent e) {
-                            super.windowClosing(e);
-                        }
-                    });
-                } catch (Exception e) {
-                    Utils.logError(getLocalName() + " : erro ao criar GUI");
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    @Override
-    protected JFrame getGUI() {
-        return gui;
-    }
-
-    @Override
-    public CyclicBehaviour receiveMessages() {
-        return receiveMessages;
-    }
-
     public void setCompetencias(List<Competencia> competencias) {
         this.competencias = competencias;
     }
@@ -349,9 +310,12 @@ public class AD extends SMAgent {
 
     public void setMagistrateAgents(DFAgentDescription[] magistrateAgents) {
         this.magistrateAgents = magistrateAgents;
-        addBehaviour(new RequestOJComposition(this, magistrateAgents, seqDistribuicao.toString()));
+        addBehaviour(new RequestOJComposition(this, magistrateAgents, distributionId.toString()));
     }
 
+    /**
+     * Discovers the Protocol and Magistrate agents alive in the plataform
+     */
     private void findAgents() {
         // Using mutex to avoid multiple findAgents on short time
         composicoes.clear();
@@ -364,9 +328,9 @@ public class AD extends SMAgent {
         for (DFAgentDescription dfd : protocolAgents) {
             if (!protocolAgentsInProcessing.contains(dfd.getName())) {
                 protocolAgentsInProcessing.add(dfd.getName());
-                seqDistribuicao++;
-                Utils.logInfo(getLocalName() + " - distribuicao (dist. id : " + seqDistribuicao + ") : iniciada");
-                addBehaviour(new RequestLawsuit(this, dfd, seqDistribuicao.toString()), seqDistribuicao.toString());
+                distributionId++;
+                Utils.logInfo(getLocalName() + " - distribuicao (dist. id : " + distributionId + ") : iniciada");
+                addBehaviour(new RequestLawsuit(this, dfd, distributionId.toString()), distributionId.toString());
             }
         }
         if (protocolAgents.length == 0) {
@@ -382,5 +346,4 @@ public class AD extends SMAgent {
     public void setPlaying(boolean playing) {
         this.playing = playing;
     }
-
 }

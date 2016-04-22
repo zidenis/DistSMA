@@ -32,9 +32,9 @@ public class ObtainOJComposition extends OneShotBehaviour {
          */
         composicaoOjList = am.getDbDSL().select()
                 .from(T_COMPOSICAO_OJ)
-                .where(T_COMPOSICAO_OJ.COD_MAGISTRADO.equal(am.getMagistrado().getCodMagistrado()))
+                .where(T_COMPOSICAO_OJ.COD_MAGISTRADO.equal(am.getMagistrate().getCodMagistrado()))
                 .and(T_COMPOSICAO_OJ.DTA_TER_ATUACAO.isNull())
                 .fetchInto(ComposicaoOj.class);
-        am.setComposicaoOjList(composicaoOjList);
+        am.setJudginOrganList(composicaoOjList);
     }
 }

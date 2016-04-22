@@ -20,7 +20,7 @@ public class Distribuidor implements Serializable, AgentEntity {
     private String codDistribuidor;
     private String nomDistribuidor;
 
-    private String status = AGP.LOADED;
+    private String status = AGP.STATUS_LOADED;
 
     public Distribuidor() {
     }
@@ -40,7 +40,7 @@ public class Distribuidor implements Serializable, AgentEntity {
 
     @Override
     public String toString() {
-        return codDistribuidor + (status.equals(AGP.LOADED) ? status : " (" + status + ")");
+        return codDistribuidor + (status.equals(AGP.STATUS_LOADED) ? status : " (" + status + ")");
     }
 
     @Override

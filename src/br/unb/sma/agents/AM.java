@@ -5,13 +5,10 @@ import br.unb.sma.behaviors.ObtainImpediments;
 import br.unb.sma.behaviors.ObtainOJComposition;
 import br.unb.sma.entities.*;
 import br.unb.sma.utils.Utils;
-import jade.core.behaviours.CyclicBehaviour;
 import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
 
 import javax.swing.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,185 +16,36 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Created by zidenis.
- * 16-03-2016
+ * AM (Agente Magistrado - Magistrate Agent)
+ * @author zidenis
+ * @version 2016.4.22
  */
-public class AM extends SMAgent {
+public class AM extends LawDisTrAgent {
 
     public static final String SERVICE_TYPE = "AM";
     public static final String REQUEST_COMPOSITION = "request-composition";
     public static final String QUERY_IF_IMPEDIMENT = "query-if-impediment";
-    private final String[] SERVICES = {AM.REQUEST_COMPOSITION};
+    private final String[] SERVICES = {AM.REQUEST_COMPOSITION, AM.QUERY_IF_IMPEDIMENT};
 
-    Magistrado magistrado;
-    List<ComposicaoOj> composicaoOjList;
-    Set<Long> impedimentosProcessos;
-    Set<Long> impedimentosPartes;
-    Set<Integer> impedimentosAdvogados;
-    private JFrame gui;
-    private AM agent = this;
-    private AMview view;
+    private Magistrado magistrate;
+    private List<ComposicaoOj> judginOrganList;
+    private Set<Long> impedimentsInLawsuits;
+    private Set<Long> impedimentsRelatedToParts;
+    private Set<Integer> impedimentsRelatedToLawyers;
+    private AM am = this;
+    private AMview view = new AMview(am);
 
     @Override
     protected void setup() {
-        magistrado = (Magistrado) getArguments()[0];
+        magistrate = (Magistrado) getArguments()[0];
         super.setup();
-        addBehaviour(new ObtainOJComposition(agent));
-        addBehaviour(new ObtainImpediments(agent));
+        addBehaviour(new ObtainOJComposition(am));
+        addBehaviour(new ObtainImpediments(am));
     }
 
     @Override
-    protected void processMessages(ACLMessage msg) {
-        super.processMessages(msg);
-        switch (msg.getEnvelope().getComments()) {
-            case REQUEST_COMPOSITION:
-                processRequestComposition(msg);
-                break;
-            case QUERY_IF_IMPEDIMENT:
-                processQueryIfImpediment(msg);
-                break;
-        }
-    }
-
-    private void processRequestComposition(ACLMessage msg) {
-        ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-        reply.addReceiver(msg.getSender());
-        //reply.setConversationId(msg.getConversationId());
-        Envelope envelope = new Envelope();
-        envelope.setComments(AD.INFORM_COMPOSTION);
-        reply.setEnvelope(envelope);
-        try {
-            reply.setContentObject((Serializable) composicaoOjList);
-            send(reply);
-        } catch (IOException e) {
-            Utils.logError(getLocalName() + " : erro ao definir composição de magistrado");
-        }
-    }
-
-    private void processQueryIfImpediment(ACLMessage msg) {
-        try {
-            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-            reply.addReceiver(msg.getSender());
-            reply.setConversationId(msg.getConversationId());
-            Envelope envelope = new Envelope();
-            ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
-            boolean impedido = false;
-            List<String> tipos = new ArrayList<>();
-            List<String> detalhamentos = new ArrayList<>();
-            // MA declarou-se impedido para julgar o processo determinado
-            if (impedimentosProcessos.contains(pc.getProcesso().getCodProcesso())) {
-                impedido = true;
-                tipos.add("Processo");
-                detalhamentos.add(pc.getProcesso().toString());
-            }
-            for (Parte parte : pc.getPartes()) {
-                if (impedimentosPartes.contains(parte.getCodParte())) {
-                    impedido = true;
-                    tipos.add("Parte");
-                    detalhamentos.add(parte.toString());
-                }
-            }
-            for (Advogado adv : pc.getAdvogados()) {
-                if (impedimentosAdvogados.contains(adv.getNumAdvogado())) {
-                    impedido = true;
-                    tipos.add("Advogado");
-                    detalhamentos.add(adv.toString());
-                }
-            }
-            if (impedido) {
-                envelope.setComments(AD.INFORM_IMPEDIMENT);
-                reply.addUserDefinedParameter("tipo", tipos.toString());
-                reply.addUserDefinedParameter("detalhamento", detalhamentos.toString());
-            } else {
-                envelope.setComments(AD.INFORM_COMPETENCE);
-            }
-            reply.setEnvelope(envelope);
-            reply.setContentObject(pc);
-            send(reply);
-        } catch (Exception e) {
-            Utils.logError(getLocalName() + " : erro ao processar impedimentos em processo");
-        }
-    }
-
-    @Override
-    protected void loadGUI() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    //Loading the GUI
-                    gui = new JFrame("AM : " + getLocalName());
-                    view = new AMview(agent);
-                    gui.setContentPane(view.getForm());
-                    gui.pack();
-                    gui.setLocation(Utils.guiLocation("AM"));
-                    gui.setVisible(true);
-                    gui.addWindowListener(new WindowAdapter() {
-                        @Override
-                        public void windowClosing(WindowEvent e) {
-                            super.windowClosing(e);
-                        }
-                    });
-                } catch (Exception e) {
-                    Utils.logError(getLocalName() + " : erro ao criar GUI");
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    @Override
-    protected JFrame getGUI() {
-        return gui;
-    }
-
-    public void setComposicaoOjList(List<ComposicaoOj> composicaoOjList) {
-        this.composicaoOjList = composicaoOjList;
-        if (isGUIenable) {
-            SwingUtilities.invokeLater(() -> {
-                view.setComposicaoOJ(Utils.join(composicaoOjList.listIterator(), "\n"));
-                gui.pack();
-            });
-        }
-    }
-
-    public void setImpedimentosProcessos(Set<Long> impedimentosProcessos) {
-        this.impedimentosProcessos = impedimentosProcessos;
-        if (isGUIenable) {
-            SwingUtilities.invokeLater(() -> {
-                view.setQtdProcImped(String.valueOf(impedimentosProcessos.size()));
-                gui.pack();
-            });
-        }
-    }
-
-    public void setImpedimentosPartes(Set<Long> impedimentosPartes) {
-        this.impedimentosPartes = impedimentosPartes;
-        if (isGUIenable) {
-            SwingUtilities.invokeLater(() -> {
-                view.setQtdParteImped(String.valueOf(impedimentosPartes.size()));
-                gui.pack();
-            });
-        }
-    }
-
-    public void setImpedimentosAdvogados(Set<Integer> impedimentosAdvogados) {
-        this.impedimentosAdvogados = impedimentosAdvogados;
-        if (isGUIenable) {
-            SwingUtilities.invokeLater(() -> {
-                view.setQtdAdvImped(String.valueOf(impedimentosAdvogados.size()));
-                gui.pack();
-            });
-        }
-    }
-
-    public Magistrado getMagistrado() {
-        return magistrado;
-    }
-
-    @Override
-    public String toString() {
-        return getLocalName() + " (" + getAgentState().toString() + ")";
+    public AMview getView() {
+        return view;
     }
 
     @Override
@@ -210,8 +58,159 @@ public class AM extends SMAgent {
         return SERVICES;
     }
 
+    /**
+     * Deals with the received messages by AM agents
+     *
+     * @param msg the message that will be processed
+     */
     @Override
-    public CyclicBehaviour receiveMessages() {
-        return receiveMessages;
+    protected void processReceivedMessage(ACLMessage msg) {
+        super.processReceivedMessage(msg);
+        switch (msg.getEnvelope().getComments()) {
+            case REQUEST_COMPOSITION:
+                processRequestComposition(msg);
+                break;
+            case QUERY_IF_IMPEDIMENT:
+                processQueryIfImpediment(msg);
+                break;
+        }
+    }
+
+    /**
+     * Process the Request Composition message
+     * @param msg the request message
+     */
+    private void processRequestComposition(ACLMessage msg) {
+        ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
+        reply.addReceiver(msg.getSender());
+        Envelope envelope = new Envelope();
+        envelope.setComments(AD.INFORM_COMPOSTION);
+        reply.setEnvelope(envelope);
+        try {
+            reply.setContentObject((Serializable) judginOrganList);
+            send(reply);
+        } catch (IOException e) {
+            Utils.logError(getLocalName() + " : erro ao definir composição de magistrado");
+        }
+    }
+
+    /**
+     * Process the Query If Impediment message
+     * @param msg the request message
+     */
+    private void processQueryIfImpediment(ACLMessage msg) {
+        try {
+            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
+            reply.addReceiver(msg.getSender());
+            reply.setConversationId(msg.getConversationId());
+            Envelope envelope = new Envelope();
+            ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
+            boolean impediment = false;
+            List<String> impedimentsTypes = new ArrayList<>();
+            List<String> impedimentsDetails = new ArrayList<>();
+            // MA is impedid to judge the specific lawsuit
+            if (impedimentsInLawsuits.contains(pc.getProcesso().getCodProcesso())) {
+                impediment = true;
+                impedimentsTypes.add("Processo");
+                impedimentsDetails.add(pc.getProcesso().toString());
+            }
+            // MA is impedid to judge the lawsuit because of the persons involved as defendant and victim
+            for (Parte parte : pc.getPartes()) {
+                if (impedimentsRelatedToParts.contains(parte.getCodParte())) {
+                    impediment = true;
+                    impedimentsTypes.add("Parte");
+                    impedimentsDetails.add(parte.toString());
+                }
+            }
+            // MA is impedid to judge the lawsuit because of the lawyers involved
+            for (Advogado adv : pc.getAdvogados()) {
+                if (impedimentsRelatedToLawyers.contains(adv.getNumAdvogado())) {
+                    impediment = true;
+                    impedimentsTypes.add("Advogado");
+                    impedimentsDetails.add(adv.toString());
+                }
+            }
+            if (impediment) {
+                envelope.setComments(AD.INFORM_IMPEDIMENT);
+                reply.addUserDefinedParameter("tipo", impedimentsTypes.toString());
+                reply.addUserDefinedParameter("detalhamento", impedimentsDetails.toString());
+            } else {
+                envelope.setComments(AD.INFORM_COMPETENCE);
+            }
+            reply.setEnvelope(envelope);
+            reply.setContentObject(pc);
+            send(reply);
+        } catch (Exception e) {
+            Utils.logError(getLocalName() + " : erro ao processar impedimentos em processo");
+        }
+    }
+
+    /**
+     * Defines the OJs (Orgãos Judicantes - Judging Organs) that the magistrate is member of.
+     *
+     * @param judginOrganList the list of Judging Organs
+     */
+    public void setJudginOrganList(List<ComposicaoOj> judginOrganList) {
+        this.judginOrganList = judginOrganList;
+        if (isGUIEnabled) {
+            SwingUtilities.invokeLater(() -> {
+                view.setComposicaoOJ(Utils.join(judginOrganList.listIterator(), "\n"));
+                gui.pack();
+            });
+        }
+    }
+
+    /**
+     * Defines the list os lawsuits that the magistrate is impedid to judge
+     *
+     * @param impedimentsInLawsuits the list of lawsuit's ids
+     */
+    public void setImpedimentsInLawsuits(Set<Long> impedimentsInLawsuits) {
+        this.impedimentsInLawsuits = impedimentsInLawsuits;
+        if (isGUIEnabled) {
+            SwingUtilities.invokeLater(() -> {
+                view.setQtdProcImped(String.valueOf(impedimentsInLawsuits.size()));
+                gui.pack();
+            });
+        }
+    }
+
+    /**
+     * Defines the list of person ids that the magistrate is impedid to judge related lawsuits
+     *
+     * @param impedimentsRelatedToParts the list of person ids
+     */
+    public void setImpedimentsRelatedToParts(Set<Long> impedimentsRelatedToParts) {
+        this.impedimentsRelatedToParts = impedimentsRelatedToParts;
+        if (isGUIEnabled) {
+            SwingUtilities.invokeLater(() -> {
+                view.setQtdParteImped(String.valueOf(impedimentsRelatedToParts.size()));
+                gui.pack();
+            });
+        }
+    }
+
+    /**
+     * Defines the list of lawyers ids that the magistrate is impedido to judge related lawsuits
+     *
+     * @param impedimentsRelatedToLawyers the list of lawyers lawsuits
+     */
+    public void setImpedimentsRelatedToLawyers(Set<Integer> impedimentsRelatedToLawyers) {
+        this.impedimentsRelatedToLawyers = impedimentsRelatedToLawyers;
+        if (isGUIEnabled) {
+            SwingUtilities.invokeLater(() -> {
+                view.setQtdAdvImped(String.valueOf(impedimentsRelatedToLawyers.size()));
+                gui.pack();
+            });
+        }
+    }
+
+    /**
+     * Gets the Magistrate represented by the AM
+     *
+     * @return the magitrate entity
+     */
+    public Magistrado getMagistrate() {
+        return magistrate;
     }
 }

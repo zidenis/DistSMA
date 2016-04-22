@@ -9,14 +9,14 @@ import jade.lang.acl.ACLMessage;
  */
 public class ReceiveMessages extends CyclicBehaviour {
 
-    public static final String RCVD_MSG = "received-message";
+    public static final String REVEIVED_MESSAGE = "received-message";
 
     @Override
     public void action() {
         ACLMessage msg = myAgent.receive();
         if (msg != null) {
             //Utils.logInfo(myAgent.getLocalName() + " : mensagem recebida de " + msg.getSender().getLocalName());
-            getDataStore().put(RCVD_MSG, msg);
+            getDataStore().put(REVEIVED_MESSAGE, msg);
             myAgent.doActivate();
         } else {
             // used to make the CyclicBehaviour be executed only when a new message is received

@@ -92,6 +92,10 @@ public class Utils {
             if (guiType.equals("AM")) {
                 x = 400;
             }
+            if (guiType.equals("AGP")) {
+                x = 900;
+                y = 0;
+            }
         } else {
             x = maxX + 21;
             y = maxY + 21;

@@ -21,7 +21,7 @@ public class Magistrado implements Serializable, AgentEntity {
     private String nomMagistrado;
     private Boolean indAdministracao;
 
-    private String status = AGP.LOADED;
+    private String status = AGP.STATUS_LOADED;
 
     public Magistrado() {
     }
@@ -44,7 +44,7 @@ public class Magistrado implements Serializable, AgentEntity {
 
     @Override
     public String toString() {
-        return codMagistrado + (status.equals(AGP.LOADED) ? status : " (" + status + ")");
+        return codMagistrado + (status.equals(AGP.STATUS_LOADED) ? status : " (" + status + ")");
     }
 
     @Override

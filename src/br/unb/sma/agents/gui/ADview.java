@@ -10,7 +10,7 @@ import java.util.TimerTask;
  * Created by zidenis.
  * 06-04-2016
  */
-public class ADview {
+public class ADview implements AgentView {
     private JButton distribuirBtn;
     private JPanel panel;
 

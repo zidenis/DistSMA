@@ -1,19 +1,17 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.APview;
+import br.unb.sma.behaviors.InformLawsuit;
 import br.unb.sma.behaviors.ObtainLawsuitAwaintingDistribution;
 import br.unb.sma.behaviors.UpdateLawsuitDB;
 import br.unb.sma.entities.HistDistribuicao;
 import br.unb.sma.entities.Processo;
-import br.unb.sma.entities.ProcessoCompleto;
 import br.unb.sma.entities.Protocolo;
 import br.unb.sma.utils.Utils;
-import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 
 import javax.swing.*;
-import java.io.IOException;
 
 import static br.unb.sma.database.Tables.T_FASE_PROCESSUAL;
 import static br.unb.sma.database.Tables.T_PROCESSO;
@@ -74,25 +72,7 @@ public class AP extends LawDisTrAgent {
      * @param msg the request message
      */
     private void processRequestLawsuit(ACLMessage msg) {
-        ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-        reply.addReceiver(msg.getSender());
-        reply.setConversationId(msg.getConversationId());
-        Envelope envelope = new Envelope();
-        if (lawsuit != null) {
-            ProcessoCompleto pc = new ProcessoCompleto(lawsuit, this);
-            envelope.setComments(AD.INFORM_LAWSUIT);
-            reply.setEnvelope(envelope);
-            try {
-                reply.setContentObject(pc);
-                send(reply);
-            } catch (IOException e) {
-                Utils.logError(getLocalName() + " : erro ao gerar processo para distribuição");
-            }
-        } else {
-            envelope.setComments(AD.INFORM_NO_LAWSUIT);
-            reply.setEnvelope(envelope);
-            send(reply);
-        }
+        addBehaviour(new InformLawsuit(this, msg), msg.getConversationId());
     }
 
     /**
@@ -103,9 +83,19 @@ public class AP extends LawDisTrAgent {
         try {
             HistDistribuicao distribution = (HistDistribuicao) msg.getContentObject();
             addBehaviour(new UpdateLawsuitDB(this, distribution), msg.getConversationId());
+            addBehaviour(new ObtainLawsuitAwaintingDistribution(this));
         } catch (UnreadableException e) {
-            Utils.logError(getLocalName() + " : erro ao obter informação de distribuição");
+            Utils.logError(getLocalName() + " : erro ao processar informação de distribuição");
         }
+    }
+
+    /**
+     * Gets the currently loaded lawsuit
+     *
+     * @return the currently loaded lawsuit
+     */
+    public Processo getLawsuit() {
+        return lawsuit;
     }
 
     /**

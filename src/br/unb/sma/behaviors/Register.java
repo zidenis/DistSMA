@@ -12,13 +12,13 @@ import jade.domain.FIPAException;
  * Created by zidenis.
  * 19-03-2016
  */
-public class DFRegistration extends OneShotBehaviour {
+public class Register extends OneShotBehaviour {
 
     LawDisTrAgent agent;
     String serviceType;
     String[] services;
 
-    public DFRegistration(LawDisTrAgent agent, String serviceType, String[] services) {
+    public Register(LawDisTrAgent agent, String serviceType, String[] services) {
         super(agent);
         this.agent = agent;
         this.serviceType = serviceType;

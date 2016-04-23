@@ -1,7 +1,7 @@
 package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AD;
-import br.unb.sma.agents.AM;
+import br.unb.sma.agents.AP;
 import br.unb.sma.utils.Utils;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.DFService;
@@ -13,11 +13,11 @@ import jade.domain.FIPAException;
  * Created by zidenis.
  * 11-04-2016
  */
-public class DiscoverMagistrateAgents extends OneShotBehaviour {
+public class SearchProtocolAgents extends OneShotBehaviour {
 
     private AD ad;
 
-    public DiscoverMagistrateAgents(AD agent) {
+    public SearchProtocolAgents(AD agent) {
         super(agent);
         this.ad = agent;
     }
@@ -26,12 +26,12 @@ public class DiscoverMagistrateAgents extends OneShotBehaviour {
     public void action() {
         DFAgentDescription dfd = new DFAgentDescription();
         ServiceDescription sd = new ServiceDescription();
-        sd.setType(AM.SERVICE_TYPE);
+        sd.setType(AP.SERVICE_TYPE);
         dfd.addServices(sd);
         try {
-            ad.setMagistrateAgents(DFService.search(ad, dfd));
+            ad.setProtocolAgents(DFService.search(ad, dfd));
         } catch (FIPAException e) {
-            Utils.logError(myAgent.getLocalName() + " - erro ao procurar agentes magistrados");
+            Utils.logError(myAgent.getLocalName() + " - erro ao procurar agentes de protocolo");
         }
     }
 }

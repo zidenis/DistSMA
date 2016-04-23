@@ -1,10 +1,10 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.AGPview;
-import br.unb.sma.behaviors.ActivateAgent;
-import br.unb.sma.behaviors.DeactivateAgent;
+import br.unb.sma.behaviors.CreateAgentTask;
 import br.unb.sma.behaviors.GetAgentsInfo;
-import br.unb.sma.behaviors.ShutdownSMA;
+import br.unb.sma.behaviors.KillAgentTask;
+import br.unb.sma.behaviors.ShutdownPlataformTask;
 import br.unb.sma.entities.AgentEntity;
 import jade.content.lang.sl.SLCodec;
 import jade.domain.FIPANames;
@@ -46,7 +46,7 @@ public class AGP extends LawDisTrAgent {
      * @param agentEntity an entity that represents the agent
      */
     public void activateAgent(AgentEntity agentEntity) {
-        addBehaviour(new ActivateAgent(this, agentEntity));
+        addBehaviour(new CreateAgentTask(this, agentEntity));
     }
 
     /**
@@ -55,14 +55,14 @@ public class AGP extends LawDisTrAgent {
      * @param agentEntity an entity that represents the agent
      */
     public void deactivateAgent(AgentEntity agentEntity) {
-        addBehaviour(new DeactivateAgent(this, agentEntity));
+        addBehaviour(new KillAgentTask(this, agentEntity));
     }
 
     /**
      * Turns off the LawDisTrA
      */
     public void shutdownSMA() {
-        addBehaviour(new ShutdownSMA());
+        addBehaviour(new ShutdownPlataformTask());
     }
 
 }

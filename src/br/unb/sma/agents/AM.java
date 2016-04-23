@@ -1,17 +1,16 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.AMview;
+import br.unb.sma.behaviors.InformComposition;
+import br.unb.sma.behaviors.InformImpedimentOrCompetence;
 import br.unb.sma.behaviors.ObtainImpediments;
 import br.unb.sma.behaviors.ObtainOJComposition;
-import br.unb.sma.entities.*;
+import br.unb.sma.entities.ComposicaoOj;
+import br.unb.sma.entities.Magistrado;
 import br.unb.sma.utils.Utils;
-import jade.domain.FIPAAgentManagement.Envelope;
 import jade.lang.acl.ACLMessage;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -71,17 +70,7 @@ public class AM extends LawDisTrAgent {
      * @param msg the request message
      */
     private void processRequestComposition(ACLMessage msg) {
-        ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-        reply.addReceiver(msg.getSender());
-        Envelope envelope = new Envelope();
-        envelope.setComments(AD.INFORM_COMPOSTION);
-        reply.setEnvelope(envelope);
-        try {
-            reply.setContentObject((Serializable) judginOrganList);
-            send(reply);
-        } catch (IOException e) {
-            Utils.logError(getLocalName() + " : erro ao definir composição de magistrado");
-        }
+        addBehaviour(new InformComposition(this, msg));
     }
 
     /**
@@ -89,50 +78,12 @@ public class AM extends LawDisTrAgent {
      * @param msg the request message
      */
     private void processQueryIfImpediment(ACLMessage msg) {
-        try {
-            ACLMessage reply = new ACLMessage(ACLMessage.INFORM);
-            reply.addReceiver(msg.getSender());
-            reply.setConversationId(msg.getConversationId());
-            Envelope envelope = new Envelope();
-            ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
-            boolean impediment = false;
-            List<String> impedimentsTypes = new ArrayList<>();
-            List<String> impedimentsDetails = new ArrayList<>();
-            // MA is impedid to judge the specific lawsuit
-            if (impedimentsInLawsuits.contains(pc.getProcesso().getCodProcesso())) {
-                impediment = true;
-                impedimentsTypes.add("Processo");
-                impedimentsDetails.add(pc.getProcesso().toString());
-            }
-            // MA is impedid to judge the lawsuit because of the persons involved as defendant and victim
-            for (Parte parte : pc.getPartes()) {
-                if (impedimentsRelatedToParts.contains(parte.getCodParte())) {
-                    impediment = true;
-                    impedimentsTypes.add("Parte");
-                    impedimentsDetails.add(parte.toString());
-                }
-            }
-            // MA is impedid to judge the lawsuit because of the lawyers involved
-            for (Advogado adv : pc.getAdvogados()) {
-                if (impedimentsRelatedToLawyers.contains(adv.getNumAdvogado())) {
-                    impediment = true;
-                    impedimentsTypes.add("Advogado");
-                    impedimentsDetails.add(adv.toString());
-                }
-            }
-            if (impediment) {
-                envelope.setComments(AD.INFORM_IMPEDIMENT);
-                reply.addUserDefinedParameter("tipo", impedimentsTypes.toString());
-                reply.addUserDefinedParameter("detalhamento", impedimentsDetails.toString());
-            } else {
-                envelope.setComments(AD.INFORM_COMPETENCE);
-            }
-            reply.setEnvelope(envelope);
-            reply.setContentObject(pc);
-            send(reply);
-        } catch (Exception e) {
-            Utils.logError(getLocalName() + " : erro ao processar impedimentos em processo");
-        }
+        addBehaviour(new InformImpedimentOrCompetence(this, msg), msg.getConversationId());
+
+    }
+
+    public List<ComposicaoOj> getJudginOrganList() {
+        return judginOrganList;
     }
 
     /**
@@ -150,6 +101,10 @@ public class AM extends LawDisTrAgent {
         }
     }
 
+    public Set<Long> getImpedimentsInLawsuits() {
+        return impedimentsInLawsuits;
+    }
+
     /**
      * Defines the list os lawsuits that the magistrate is impedid to judge
      *
@@ -165,6 +120,10 @@ public class AM extends LawDisTrAgent {
         }
     }
 
+    public Set<Long> getImpedimentsRelatedToParts() {
+        return impedimentsRelatedToParts;
+    }
+
     /**
      * Defines the list of person ids that the magistrate is impedid to judge related lawsuits
      *
@@ -178,6 +137,10 @@ public class AM extends LawDisTrAgent {
                 gui.pack();
             });
         }
+    }
+
+    public Set<Integer> getImpedimentsRelatedToLawyers() {
+        return impedimentsRelatedToLawyers;
     }
 
     /**

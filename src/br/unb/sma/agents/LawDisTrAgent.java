@@ -1,8 +1,8 @@
 package br.unb.sma.agents;
 
 import br.unb.sma.agents.gui.AgentView;
-import br.unb.sma.behaviors.DFRegistration;
 import br.unb.sma.behaviors.ReceiveMessages;
+import br.unb.sma.behaviors.Register;
 import br.unb.sma.utils.DBconf;
 import br.unb.sma.utils.Utils;
 import jade.core.Agent;
@@ -42,7 +42,7 @@ public abstract class LawDisTrAgent extends Agent {
         if (isGUIEnabled) loadGUI();
         Utils.logInfo(getLocalName() + " - agente iniciado");
         //Registration of the agent in JADE Directory Facilitator (DF)
-        addBehaviour(new DFRegistration(this, getServiceType(), getServices()));
+        addBehaviour(new Register(this, getServiceType(), getServices()));
         //Activating the behaviour that enables messages reception
         receiveMessages = new ReceiveMessages();
         addBehaviour(receiveMessages);

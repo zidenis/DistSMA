@@ -94,9 +94,10 @@ public class AD extends LawDisTrAgent {
      */
     private void findMagistratesAndProtocolAgents() {
         judginOrgansComposition.clear();
+        protocolAgentsInProcessing.clear();
         findingAgentsMutex = true;
-        addBehaviour(new DiscoverMagistrateAgents(this));
-        addBehaviour(new DiscoverProtocolAgents(this));
+        addBehaviour(new SearchMagistrateAgents(this));
+        addBehaviour(new SearchProtocolAgents(this));
     }
 
     @Override
@@ -181,7 +182,7 @@ public class AD extends LawDisTrAgent {
                             magistradosDisponiveis.add(dfd.getName().getLocalName());
                         }
                         askedMagistrates.put(lawsuit.getProcesso().getCodProcesso(), magistradosDisponiveis);
-                        addBehaviour(new CheckAMImpediment(this, lawsuit, magistrateAgents, msg.getConversationId()), msg.getConversationId());
+                        addBehaviour(new QueryIfImpediment(this, lawsuit, magistrateAgents, msg.getConversationId()), msg.getConversationId());
                     } else {
                         Utils.logInfo(getLocalName() + " - não há MA disponíveis");
                         protocolAgentsInProcessing.remove(msg.getSender());
@@ -203,18 +204,10 @@ public class AD extends LawDisTrAgent {
      */
     private void processInformNoLawsuit(ACLMessage msg) {
         protocolAgentsInProcessing.remove(msg.getSender());
-        List<DFAgentDescription> updatedProtocolAgents = new ArrayList<DFAgentDescription>();
-        for (DFAgentDescription dfd : protocolAgents) {
-            if (!msg.getSender().getLocalName().equals(dfd.getName().getLocalName())) {
-                updatedProtocolAgents.add(dfd);
-            }
-        }
-        protocolAgents = updatedProtocolAgents.toArray(protocolAgents);
-        if (isRunning() && protocolAgentsInProcessing.size() == 0) {
-            if (protocolAgents.length != 0) {
-                requestLawsuit();
-            }
-        }
+        List<DFAgentDescription> newProtocolAgents = new LinkedList<>(Arrays.asList(protocolAgents));
+        newProtocolAgents.removeIf(dfd -> dfd.getName().getLocalName().equals(msg.getSender().getLocalName()));
+        protocolAgents = newProtocolAgents.toArray(new DFAgentDescription[0]);
+        nextTurn();
     }
 
     /**
@@ -336,8 +329,20 @@ public class AD extends LawDisTrAgent {
         }
         lawsuitsInProcessing.remove(distribution.getCodProcesso());
         protocolAgentsInProcessing.remove(protocolAgentReceiver);
+        nextTurn();
+    }
+
+    /**
+     * Continues the distribution if the agent continuous running mode
+     */
+    private void nextTurn() {
         if (isRunning() && protocolAgentsInProcessing.size() == 0) {
-            requestLawsuit();
+            if (protocolAgents.length != 0) {
+                requestLawsuit();
+            } else {
+                running = false;
+                ((ADview) view).setPlayButtonText("Play");
+            }
         }
     }
 
@@ -364,7 +369,7 @@ public class AD extends LawDisTrAgent {
      */
     public void setMagistrateAgents(DFAgentDescription[] magistrateAgents) {
         this.magistrateAgents = magistrateAgents;
-        addBehaviour(new RequestOJComposition(this, magistrateAgents, distributionId.toString()));
+        addBehaviour(new RequestComposition(this, magistrateAgents, distributionId.toString()));
     }
 
     /**
@@ -379,10 +384,7 @@ public class AD extends LawDisTrAgent {
                 distributionId++;
             }
         }
-        if (protocolAgents.length == 0) {
-            running = false;
-            ((ADview) view).setPlayButtonText("Play");
-        }
+
     }
 
     /**

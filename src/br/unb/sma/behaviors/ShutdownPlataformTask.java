@@ -12,7 +12,7 @@ import jade.lang.acl.ACLMessage;
  * Created by zidenis.
  * 21-03-2016
  */
-public class ShutdownSMA extends OneShotBehaviour {
+public class ShutdownPlataformTask extends OneShotBehaviour {
 
     @Override
     public void action() {

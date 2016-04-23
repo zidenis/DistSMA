@@ -11,13 +11,13 @@ import jade.lang.acl.ACLMessage;
  * Created by zidenis.
  * 11-04-2016
  */
-public class RequestOJComposition extends OneShotBehaviour {
+public class RequestComposition extends OneShotBehaviour {
 
     AD ad;
     DFAgentDescription[] magistrateAgents;
     String idDistribuicao;
 
-    public RequestOJComposition(AD ad, DFAgentDescription[] magistrateAgents, String idDistribuicao) {
+    public RequestComposition(AD ad, DFAgentDescription[] magistrateAgents, String idDistribuicao) {
         this.ad = ad;
         this.magistrateAgents = magistrateAgents;
         this.idDistribuicao = idDistribuicao;

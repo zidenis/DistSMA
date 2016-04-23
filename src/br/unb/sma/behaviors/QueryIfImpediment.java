@@ -15,14 +15,14 @@ import java.io.IOException;
  * Created by zidenis.
  * 12-04-2016
  */
-public class CheckAMImpediment extends OneShotBehaviour {
+public class QueryIfImpediment extends OneShotBehaviour {
 
     AD ad;
     ProcessoCompleto pc;
     DFAgentDescription[] magistrateAgents;
     String idDistribuicao;
 
-    public CheckAMImpediment(AD ad, ProcessoCompleto pc, DFAgentDescription[] magistrateAgents, String idDistribuicao) {
+    public QueryIfImpediment(AD ad, ProcessoCompleto pc, DFAgentDescription[] magistrateAgents, String idDistribuicao) {
         this.ad = ad;
         this.pc = pc;
         this.magistrateAgents = magistrateAgents;

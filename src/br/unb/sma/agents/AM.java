@@ -25,37 +25,27 @@ public class AM extends LawDisTrAgent {
     public static final String SERVICE_TYPE = "AM";
     public static final String REQUEST_COMPOSITION = "request-composition";
     public static final String QUERY_IF_IMPEDIMENT = "query-if-impediment";
-    private final String[] SERVICES = {AM.REQUEST_COMPOSITION, AM.QUERY_IF_IMPEDIMENT};
 
+    private AM am = this;
     private Magistrado magistrate;
     private List<ComposicaoOj> judginOrganList;
     private Set<Long> impedimentsInLawsuits;
     private Set<Long> impedimentsRelatedToParts;
     private Set<Integer> impedimentsRelatedToLawyers;
-    private AM am = this;
-    private AMview view = new AMview(am);
 
     @Override
     protected void setup() {
         magistrate = (Magistrado) getArguments()[0];
+        setServices(new String[]{AM.REQUEST_COMPOSITION, AM.QUERY_IF_IMPEDIMENT});
+        setView(new AMview(am));
         super.setup();
         addBehaviour(new ObtainOJComposition(am));
         addBehaviour(new ObtainImpediments(am));
     }
 
     @Override
-    public AMview getView() {
-        return view;
-    }
-
-    @Override
     public String getServiceType() {
         return SERVICE_TYPE;
-    }
-
-    @Override
-    public String[] getServices() {
-        return SERVICES;
     }
 
     /**
@@ -154,7 +144,7 @@ public class AM extends LawDisTrAgent {
         this.judginOrganList = judginOrganList;
         if (isGUIEnabled) {
             SwingUtilities.invokeLater(() -> {
-                view.setComposicaoOJ(Utils.join(judginOrganList.listIterator(), "\n"));
+                ((AMview) view).setComposicaoOJ(Utils.join(judginOrganList.listIterator(), "\n"));
                 gui.pack();
             });
         }
@@ -169,7 +159,7 @@ public class AM extends LawDisTrAgent {
         this.impedimentsInLawsuits = impedimentsInLawsuits;
         if (isGUIEnabled) {
             SwingUtilities.invokeLater(() -> {
-                view.setQtdProcImped(String.valueOf(impedimentsInLawsuits.size()));
+                ((AMview) view).setQtdProcImped(String.valueOf(impedimentsInLawsuits.size()));
                 gui.pack();
             });
         }
@@ -184,7 +174,7 @@ public class AM extends LawDisTrAgent {
         this.impedimentsRelatedToParts = impedimentsRelatedToParts;
         if (isGUIEnabled) {
             SwingUtilities.invokeLater(() -> {
-                view.setQtdParteImped(String.valueOf(impedimentsRelatedToParts.size()));
+                ((AMview) view).setQtdParteImped(String.valueOf(impedimentsRelatedToParts.size()));
                 gui.pack();
             });
         }
@@ -199,7 +189,7 @@ public class AM extends LawDisTrAgent {
         this.impedimentsRelatedToLawyers = impedimentsRelatedToLawyers;
         if (isGUIEnabled) {
             SwingUtilities.invokeLater(() -> {
-                view.setQtdAdvImped(String.valueOf(impedimentsRelatedToLawyers.size()));
+                ((AMview) view).setQtdAdvImped(String.valueOf(impedimentsRelatedToLawyers.size()));
                 gui.pack();
             });
         }

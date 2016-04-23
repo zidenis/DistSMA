@@ -29,34 +29,24 @@ public class AP extends LawDisTrAgent {
     public static final String SERVICE_TYPE = "AP";
     public static final String REQUEST_LAWSUIT = "request-lawsuit";
     public static final String INFORM_DISTRIBUTION = "inform-distribution";
-    private final String[] SERVICES = {AP.REQUEST_LAWSUIT, INFORM_DISTRIBUTION};
 
+    private AP ap = this;
     private Protocolo protocol;
     private Processo lawsuit;
     private Integer lawsuitQty;
-    private AP ap = this;
-    private APview view = new APview(ap);
 
     @Override
     protected void setup() {
         protocol = (Protocolo) getArguments()[0];
+        setServices(new String[]{AP.REQUEST_LAWSUIT, INFORM_DISTRIBUTION});
+        setView(new APview(ap));
         super.setup();
         addBehaviour(new ObtainLawsuitAwaintingDistribution(ap));
     }
 
     @Override
-    public APview getView() {
-        return view;
-    }
-
-    @Override
     public String getServiceType() {
         return SERVICE_TYPE;
-    }
-
-    @Override
-    public String[] getServices() {
-        return SERVICES;
     }
 
     /**
@@ -129,8 +119,8 @@ public class AP extends LawDisTrAgent {
             if (isGUIEnabled) {
                 SwingUtilities.invokeLater(() -> {
                     if (gui.isDisplayable()) {
-                        view.setProcesso(lawsuit.toString());
-                        view.setQtdProcessosFila(getLawsuitQty());
+                        ((APview) view).setProcesso(lawsuit.toString());
+                        ((APview) view).setQtdProcessosFila(getLawsuitQty());
                     }
                 });
             }
@@ -139,8 +129,8 @@ public class AP extends LawDisTrAgent {
             if (isGUIEnabled) {
                 SwingUtilities.invokeLater(() -> {
                     if (gui.isDisplayable()) {
-                        view.setProcesso("sem processos");
-                        view.setQtdProcessosFila(getLawsuitQty());
+                        ((APview) view).setProcesso("sem processos");
+                        ((APview) view).setQtdProcessosFila(getLawsuitQty());
                     }
                 });
             }

@@ -32,6 +32,7 @@ public abstract class LawDisTrAgent extends Agent {
     protected AgentView view;
     protected JFrame gui;
     protected CyclicBehaviour receiveMessages;
+    private String[] services = {""};
     private Connection dbConnection;
     private DSLContext dbDSL;
 
@@ -99,10 +100,20 @@ public abstract class LawDisTrAgent extends Agent {
 
     /**
      * Gets the reference to the agent's view
-     *
      * @return
      */
-    protected abstract AgentView getView();
+    public AgentView getView() {
+        return view;
+    }
+
+    /**
+     * Defines the agent view
+     *
+     * @param view the agent view
+     */
+    public void setView(AgentView view) {
+        this.view = view;
+    }
 
     /**
      * Closes the agent's GUI
@@ -142,11 +153,22 @@ public abstract class LawDisTrAgent extends Agent {
     /**
      * Gets the services descriptions implemented by the agent
      */
-    protected abstract String[] getServices();
+    public String[] getServices() {
+        return services;
+    }
 
     /**
-     * Common tasks for all LawDisTrA agents when processing received messages
+     * Defines the services implemented by the agent
      *
+     * @param services an array with the names of the services
+     */
+    public void setServices(String[] services) {
+        this.services = services;
+    }
+
+    /**
+     * Process the messages received by the agent
+     * Common tasks for all LawDisTrA agents when processing received messages
      * @param msg the message that will be processed
      */
     protected void processReceivedMessage(ACLMessage msg) {
@@ -178,4 +200,6 @@ public abstract class LawDisTrAgent extends Agent {
         Utils.logInfo(getLocalName() + " - tarefa (dist. id: " + distributionID + ") : " + behaviour.getClass().getSimpleName());
         super.addBehaviour(behaviour);
     }
+
+
 }

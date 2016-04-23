@@ -30,35 +30,252 @@ import static br.unb.sma.database.Tables.T_HIST_DISTRIBUICAO;
 public class AD extends LawDisTrAgent {
 
     public static final String SERVICE_TYPE = "AD";
-    public static final String DISTRIBUTE = "distribute";
+    public static final String DISTRIBUTION = "distribution";
     public static final String INFORM_PLATAFORM_CHANGE = "inform-plataform-change";
     public static final String INFORM_COMPOSTION = "inform-composition";
     public static final String INFORM_LAWSUIT = "inform-lawsuit";
     public static final String INFORM_NO_LAWSUIT = "inform-no-lawsuit";
     public static final String INFORM_IMPEDIMENT = "inform-impediment";
     public static final String INFORM_COMPETENCE = "inform-competence";
-    private final String[] SERVICES = {DISTRIBUTE};
+    private final String DROOLS_RULES_FILE = "br/unb/sma/rules/Distribution.drl";
 
-    private Distribuidor distributor;
-    private Integer distributionId;
-
-    private boolean findAgentsMutex = false;
-    private boolean playing = false;
-    private List<Competencia> competencias;
-    private Map<String, List<ComposicaoOj>> composicoes = new HashMap<>();
-    private DFAgentDescription[] protocolAgents;
-    private DFAgentDescription[] magistrateAgents;
-    private Map<Long, Set<String>> magistradosQuestionados = new HashMap<>(); // "Código do Processo" -> {Magistrados}
-    private Map<Long, Set<Impedimento>> impedimentos = new HashMap<>(); // "Código do Processo" -> {Impedimentos}
-    private Map<Long, AID> protocoloResponsavel = new HashMap<>(); // "Código do Processo" -> Agente Protocolo
-    private Set<Long> processosEmAnalise = new HashSet<>(); // Para evitar problemas de concorrência
-    private Set<AID> protocolAgentsInProcessing = new HashSet<>();
     private AD ad = this;
-    private ADview view = new ADview(ad);
+    private Distribuidor distributor;
+    private Integer distributionId; // an identification for the distribution
+    private boolean running = false; // Identifies if LawDisTrA is currently running on continuous distribution mode
+    private boolean findingAgentsMutex = false; // Using mutex to avoid multiple invokes of findMagistratesAndProtocolAgents on short period of time
+    private Map<String, List<ComposicaoOj>> judginOrgansComposition = new HashMap<>(); // Maps the magistrate id with the judging organs that he is member of
+    private List<Competencia> judginOrgansCompetencies; // A list of juding organs competencies
+    private DFAgentDescription[] protocolAgents; // the Protocol Agents available in LawDisTrA
+    private DFAgentDescription[] magistrateAgents; // the Magistrate Agentes available in LawDisTrA
+    private Map<Long, Set<String>> askedMagistrates = new HashMap<>(); // maps the lawsuit identification with tha magistrate agents that were asked about their competences
+    private Map<Long, Set<Impedimento>> impediments = new HashMap<>(); // maps the lawsuit identification with the impediments of the process
+    private Map<Long, AID> responsibleProtocolAgent = new HashMap<>(); // maps the lawsuit identification with the protocol agent identification responsible for handle the lawsuit
+    private Set<Long> lawsuitsInProcessing = new HashSet<>(); // a set of lawsuit in distribution process
+    private Set<AID> protocolAgentsInProcessing = new HashSet<>(); // a set of protocol agents in processing
 
-    private static KnowledgeBase buildDroolsKnowledgeBase() {
+    @Override
+    protected void setup() {
+        distributor = (Distribuidor) getArguments()[0];
+        setServices(new String[]{DISTRIBUTION});
+        setView(new ADview(ad));
+        super.setup();
+        distributionId = getLastDistributionIdFromDB() + 1;
+        addBehaviour(new ObtainOJCompetencies(this));
+        findMagistratesAndProtocolAgents();
+    }
+
+    @Override
+    public String getServiceType() {
+        return SERVICE_TYPE;
+    }
+
+    /**
+     * Gets the last distribution id recorded on database
+     * SELECT max(seq_distribuicao)
+     * FROM t_hist_distribuicao
+     * WHERE cod_distribuidor = 'AD01'
+     *
+     * @return the distribution id
+     */
+    private Integer getLastDistributionIdFromDB() {
+
+        Integer actualSeq = getDbDSL()
+                .select(T_HIST_DISTRIBUICAO.SEQ_DISTRIBUICAO.max())
+                .from(T_HIST_DISTRIBUICAO)
+                .where(T_HIST_DISTRIBUICAO.COD_DISTRIBUIDOR.equal(distributor.getCodDistribuidor()))
+                .fetchOne().value1();
+        if (actualSeq == null) actualSeq = 0;
+        return actualSeq;
+    }
+
+    /**
+     * Discovers the Protocol and Magistrate agents alive in the plataform
+     */
+    private void findMagistratesAndProtocolAgents() {
+        judginOrgansComposition.clear();
+        findingAgentsMutex = true;
+        addBehaviour(new DiscoverMagistrateAgents(this));
+        addBehaviour(new DiscoverProtocolAgents(this));
+    }
+
+    @Override
+    protected void processReceivedMessage(ACLMessage msg) {
+        super.processReceivedMessage(msg);
+        switch (msg.getEnvelope().getComments()) {
+            case INFORM_PLATAFORM_CHANGE:
+                processInformPlataformChange();
+                break;
+            case INFORM_COMPOSTION:
+                processInformComposition(msg);
+                break;
+            case INFORM_LAWSUIT:
+                processInformLawsuit(msg);
+                break;
+            case INFORM_NO_LAWSUIT:
+                processInformNoLawsuit(msg);
+                break;
+            case INFORM_IMPEDIMENT:
+                processInformImpediment(msg, true);
+                break;
+            case INFORM_COMPETENCE:
+                processInformImpediment(msg, false);
+                break;
+        }
+    }
+
+    /**
+     * Process messages that informs that the agents plataform composition has changed, agentes were born or die
+     */
+    private void processInformPlataformChange() {
+        if (findingAgentsMutex) {
+            findingAgentsMutex = false;
+            Timer time = new Timer();
+            time.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    findMagistratesAndProtocolAgents();
+                }
+            }, 1000);
+        }
+    }
+
+    /**
+     * Process messages received from Magistrate Agents that informs their Judgin Organs composition
+     * @param msg the message to be processed
+     */
+    private void processInformComposition(ACLMessage msg) {
+        try {
+            List<ComposicaoOj> composicaoOjList = (List) msg.getContentObject();
+            for (ComposicaoOj coj : composicaoOjList) {
+                String codMag = coj.getCodMagistrado();
+                if (judginOrgansComposition.containsKey(codMag)) {
+                    judginOrgansComposition.get(codMag).add(coj);
+                } else {
+                    List<ComposicaoOj> ojs = new LinkedList<>();
+                    ojs.add(coj);
+                    judginOrgansComposition.put(codMag, ojs);
+                }
+            }
+        } catch (UnreadableException e) {
+            Utils.logError(getLocalName() + " : erro ao identificar OJs de " + msg.getSender().getLocalName());
+        }
+    }
+
+    /**
+     * Process messages received from Protocol Agents with lawsuit information
+     * @param msg that message that contains the lawsuit information
+     */
+    private void processInformLawsuit(ACLMessage msg) {
+        try {
+            ProcessoCompleto lawsuit = (ProcessoCompleto) msg.getContentObject();
+            if (lawsuitsInProcessing.add(lawsuit.getProcesso().getCodProcesso())) {
+                responsibleProtocolAgent.put(lawsuit.getProcesso().getCodProcesso(), msg.getSender());
+                if (hasRelatedDistribution(lawsuit)) {
+                    HistDistribuicao distribuicao = applyDistributionRules(lawsuit, msg.getConversationId());
+                    requestAplicationOfDistribution(distribuicao, msg.getSender());
+                } else {
+                    Set<String> magistradosDisponiveis = new HashSet<>();
+                    if (magistrateAgents.length > 0) {
+                        for (DFAgentDescription dfd : magistrateAgents) {
+                            magistradosDisponiveis.add(dfd.getName().getLocalName());
+                        }
+                        askedMagistrates.put(lawsuit.getProcesso().getCodProcesso(), magistradosDisponiveis);
+                        addBehaviour(new CheckAMImpediment(this, lawsuit, magistrateAgents, msg.getConversationId()), msg.getConversationId());
+                    } else {
+                        Utils.logInfo(getLocalName() + " - não há MA disponíveis");
+                        protocolAgentsInProcessing.remove(msg.getSender());
+                        lawsuitsInProcessing.remove(lawsuit.getProcesso().getCodProcesso());
+                    }
+                }
+            } else {
+                Utils.logInfo(getLocalName() + " - processo informado já em processo distribuição");
+            }
+        } catch (UnreadableException e) {
+            Utils.logError(getLocalName() + " : erro no Processo recebido de " + msg.getSender().getLocalName());
+        }
+    }
+
+    /**
+     * Process messages received from Protocol Agents informing that it has no more lawsuits to be distributed
+     *
+     * @param msg the message to be processed
+     */
+    private void processInformNoLawsuit(ACLMessage msg) {
+        protocolAgentsInProcessing.remove(msg.getSender());
+        List<DFAgentDescription> updatedProtocolAgents = new ArrayList<DFAgentDescription>();
+        for (DFAgentDescription dfd : protocolAgents) {
+            if (!msg.getSender().getLocalName().equals(dfd.getName().getLocalName())) {
+                updatedProtocolAgents.add(dfd);
+            }
+        }
+        protocolAgents = updatedProtocolAgents.toArray(protocolAgents);
+        if (isRunning() && protocolAgentsInProcessing.size() == 0) {
+            if (protocolAgents.length != 0) {
+                requestLawsuit();
+            }
+        }
+    }
+
+    /**
+     * Process messages received from Magistrate Agentes informing that it is impeded or competent to judge an lawsuit
+     *
+     * @param msg     the message that contains lawsuit's impediment information
+     * @param impedid true if the magistrate is impeded
+     */
+    private void processInformImpediment(ACLMessage msg, boolean impedid) {
+        try {
+            ProcessoCompleto lawsuit = (ProcessoCompleto) msg.getContentObject();
+            String magistrado = msg.getSender().getLocalName();
+            Long codProcesso = lawsuit.getProcesso().getCodProcesso();
+            askedMagistrates.get(codProcesso).remove(magistrado);
+            if (impedid) {
+                Impedimento impedimento = new Impedimento(magistrado, msg.getUserDefinedParameter("tipo"), msg.getUserDefinedParameter("detalhamento"));
+                if (impediments.get(codProcesso) == null) {
+                    Set<Impedimento> impedimentosSet = new HashSet<>();
+                    impedimentosSet.add(impedimento);
+                    impediments.put(codProcesso, impedimentosSet);
+                } else {
+                    impediments.get(codProcesso).add(impedimento);
+                }
+            }
+            if (askedMagistrates.get(codProcesso).size() == 0) {
+                HistDistribuicao distribuicao = applyDistributionRules(lawsuit, msg.getConversationId());
+                AID protocolAgentReceiver = responsibleProtocolAgent.get(codProcesso);
+                requestAplicationOfDistribution(distribuicao, protocolAgentReceiver);
+            }
+        } catch (UnreadableException e) {
+            Utils.logError(getLocalName() + " : erro ao processar informação de impedimento de " + msg.getSender().getLocalName());
+        }
+    }
+
+    /**
+     * Checks if the lawsuit has related lawsuits with previous distribution
+     *
+     * @param lawsuit the lawsuit
+     * @return true if the lawsuit has related lawsuits with previsou distribution
+     */
+    private boolean hasRelatedDistribution(ProcessoCompleto lawsuit) {
+        if (lawsuit.getFaseAnterior() != null) {
+            if (!lawsuit.getFaseAnterior().getCodMagistrado().equals("null")) {
+                return true;
+            }
+        } else if (lawsuit.getFasesProcRel() != null) {
+            for (FaseProcessual fp : lawsuit.getFasesProcRel()) {
+                if (fp.getCodMagistrado() != null) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * helper method to initiate the Drools Knowledge Base
+     *
+     * @return the Drools Knowledge Base
+     */
+    private KnowledgeBase buildDroolsKnowledgeBase() {
         KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
-        kbuilder.add(ResourceFactory.newClassPathResource("br/unb/sma/rules/Distribution.drl"), ResourceType.DRL);
+        kbuilder.add(ResourceFactory.newClassPathResource(DROOLS_RULES_FILE), ResourceType.DRL);
         KnowledgeBuilderErrors errors = kbuilder.getErrors();
         if (errors.size() > 0) {
             for (KnowledgeBuilderError error : errors) {
@@ -70,280 +287,118 @@ public class AD extends LawDisTrAgent {
         return kbase;
     }
 
-    @Override
-    protected void setup() {
-        distributor = (Distribuidor) getArguments()[0];
-        super.setup();
-        distributionId = getCurrentSeqDistribuicaoFromDB();
-        addBehaviour(new ObtainOJCompetencies(this));
-        findAgents();
-    }
-
-    @Override
-    public ADview getView() {
-        return view;
-    }
-
-    @Override
-    public String getServiceType() {
-        return SERVICE_TYPE;
-    }
-
-    @Override
-    public String[] getServices() {
-        return SERVICES;
-    }
-
-    @Override
-    protected void processReceivedMessage(ACLMessage msg) {
-        super.processReceivedMessage(msg);
-        switch (msg.getEnvelope().getComments()) {
-            case INFORM_COMPOSTION:
-                processInformComposition(msg);
-                break;
-            case INFORM_LAWSUIT:
-                processInformLawsuit(msg);
-                break;
-            case INFORM_PLATAFORM_CHANGE:
-                processInformPlataformChange();
-                break;
-            case INFORM_IMPEDIMENT:
-                processInformImpediment(msg, true);
-                break;
-            case INFORM_COMPETENCE:
-                processInformImpediment(msg, false);
-                break;
-            case INFORM_NO_LAWSUIT:
-                processInformNoLawsuit(msg);
-                break;
-        }
-    }
-
-    private Integer getCurrentSeqDistribuicaoFromDB() {
-        /*
-        SELECT max(seq_distribuicao)
-        FROM t_hist_distribuicao
-        WHERE cod_distribuidor = 'AD01'
-         */
-        Integer actualSeq = getDbDSL()
-                .select(T_HIST_DISTRIBUICAO.SEQ_DISTRIBUICAO.max())
-                .from(T_HIST_DISTRIBUICAO)
-                .where(T_HIST_DISTRIBUICAO.COD_DISTRIBUIDOR.equal(distributor.getCodDistribuidor()))
-                .fetchOne().value1();
-        if (actualSeq == null) actualSeq = 0;
-        return actualSeq;
-    }
-
-    private void processInformNoLawsuit(ACLMessage msg) {
-        protocolAgentsInProcessing.remove(msg.getSender());
-        List<DFAgentDescription> updatedProtocolAgents = new ArrayList<DFAgentDescription>();
-        for (DFAgentDescription dfd : protocolAgents) {
-            if (!msg.getSender().getLocalName().equals(dfd.getName().getLocalName())) {
-                updatedProtocolAgents.add(dfd);
-            }
-        }
-        protocolAgents = updatedProtocolAgents.toArray(protocolAgents);
-        if (isPlaying() && protocolAgentsInProcessing.size() == 0) {
-            if (protocolAgents.length != 0) {
-                requestLawsuit();
-            }
-        }
-    }
-
-    private void processInformComposition(ACLMessage msg) {
-        try {
-            List<ComposicaoOj> composicaoOjList = (List) msg.getContentObject();
-            for (ComposicaoOj coj : composicaoOjList) {
-                String codMag = coj.getCodMagistrado();
-                if (composicoes.containsKey(codMag)) {
-                    composicoes.get(codMag).add(coj);
-                } else {
-                    List<ComposicaoOj> ojs = new LinkedList<>();
-                    ojs.add(coj);
-                    composicoes.put(codMag, ojs);
-                }
-            }
-        } catch (UnreadableException e) {
-            Utils.logError(getLocalName() + " : erro ao identificar OJs de " + msg.getSender().getLocalName());
-        }
-    }
-
-    private void processInformLawsuit(ACLMessage msg) {
-        try {
-            ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
-            if (processosEmAnalise.add(pc.getProcesso().getCodProcesso())) {
-                protocoloResponsavel.put(pc.getProcesso().getCodProcesso(), msg.getSender());
-                if (hasRelatedDistribution(pc)) {
-                    HistDistribuicao distribuicao = applyDistributionRules(pc, msg.getConversationId());
-                    requestAplicationOfDistribution(distribuicao, msg.getSender());
-                } else {
-                    Set<String> magistradosDisponiveis = new HashSet<>();
-                    if (magistrateAgents.length > 0) {
-                        for (DFAgentDescription dfd : magistrateAgents) {
-                            magistradosDisponiveis.add(dfd.getName().getLocalName());
-                        }
-                        magistradosQuestionados.put(pc.getProcesso().getCodProcesso(), magistradosDisponiveis);
-                        addBehaviour(new CheckAMImpediment(this, pc, magistrateAgents, msg.getConversationId()), msg.getConversationId());
-                    } else {
-                        Utils.logInfo(getLocalName() + " - não há MA disponíveis");
-                        protocolAgentsInProcessing.remove(msg.getSender());
-                        processosEmAnalise.remove(pc.getProcesso().getCodProcesso());
-                    }
-                }
-            } else {
-                Utils.logInfo(getLocalName() + " - processo informado já em processo distribuição");
-            }
-        } catch (UnreadableException e) {
-            Utils.logError(getLocalName() + " : erro no Processo recebido de " + msg.getSender().getLocalName());
-        }
-    }
-
-    private HistDistribuicao applyDistributionRules(ProcessoCompleto pc, String seqDistribuicao) {
+    /**
+     * Applies the distribution rules for one lawsuit and creates one resulting distribution
+     *
+     * @param lawsuit        the lawsuit
+     * @param distributionId the related distribution id
+     * @return a distribution bean
+     */
+    private HistDistribuicao applyDistributionRules(ProcessoCompleto lawsuit, String distributionId) {
         KnowledgeBase kbase = buildDroolsKnowledgeBase();
         StatefulKnowledgeSession ksession = kbase.newStatefulKnowledgeSession();
-        HistDistribuicao distribuicao = new HistDistribuicao();
-        distribuicao.setCodDistribuidor(distributor.getCodDistribuidor());
-        distribuicao.setSeqDistribuicao(Integer.valueOf(seqDistribuicao));
-        ksession.insert(distribuicao);
-        ksession.insert(pc);
-        for (Competencia competencia : competencias) ksession.insert(competencia);
+        HistDistribuicao distribution = new HistDistribuicao();
+        distribution.setCodDistribuidor(distributor.getCodDistribuidor());
+        distribution.setSeqDistribuicao(Integer.valueOf(distributionId));
+        ksession.insert(distribution);
+        ksession.insert(lawsuit);
+        for (Competencia competencia : judginOrgansCompetencies) ksession.insert(competencia);
         String[] codMagsAdministracao = new String[]{"MIGM", "MEMP", "MRLP"};
         Set<String> administracao = new HashSet<>(Arrays.asList(codMagsAdministracao));
-        for (List<ComposicaoOj> magistrados : composicoes.values()) {
+        for (List<ComposicaoOj> magistrados : judginOrgansComposition.values()) {
             for (ComposicaoOj composicaoOj : magistrados) {
                 if (!administracao.contains(composicaoOj.getCodMagistrado())) {
                     ksession.insert(composicaoOj);
                 }
             }
         }
-        if (impedimentos.get(pc.getProcesso().getCodProcesso()) != null) {
-            for (Impedimento impedimento : impedimentos.get(pc.getProcesso().getCodProcesso())) {
+        if (impediments.get(lawsuit.getProcesso().getCodProcesso()) != null) {
+            for (Impedimento impedimento : impediments.get(lawsuit.getProcesso().getCodProcesso())) {
                 ksession.insert(impedimento);
             }
         }
         ksession.fireAllRules();
         ksession.dispose();
-        return distribuicao;
+        return distribution;
     }
 
-    private boolean hasRelatedDistribution(ProcessoCompleto pc) {
-        if (pc.getFaseAnterior() != null) {
-            if (!pc.getFaseAnterior().getCodMagistrado().equals("null")) {
-                return true;
-            }
-        } else if (pc.getFasesProcRel() != null) {
-            for (FaseProcessual fp : pc.getFasesProcRel()) {
-                if (fp.getCodMagistrado() != null) return true;
-            }
+    /**
+     * Request the aplication of an distribution to the responsible protocol agent
+     *
+     * @param distribution          the distribution bean
+     * @param protocolAgentReceiver the responsible protocol agent for the distribution
+     */
+    private void requestAplicationOfDistribution(HistDistribuicao distribution, AID protocolAgentReceiver) {
+        if (distribution != null) {
+            String distribuicaoId = distribution.getSeqDistribuicao().toString();
+            addBehaviour(new UpdateDistributionDB(this, distribution), distribuicaoId);
+            addBehaviour(new InformDistribution(this, distribution, protocolAgentReceiver, distribuicaoId), distribuicaoId);
         }
-        return false;
-    }
-
-    private void processInformPlataformChange() {
-        if (findAgentsMutex) {
-            findAgentsMutex = false;
-            Timer time = new Timer();
-            time.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    findAgents();
-                }
-            }, 1000);
-        }
-    }
-
-    private void processInformImpediment(ACLMessage msg, boolean impedido) {
-        try {
-            ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
-            String magistrado = msg.getSender().getLocalName();
-            Long codProcesso = pc.getProcesso().getCodProcesso();
-            magistradosQuestionados.get(codProcesso).remove(magistrado);
-            if (impedido) {
-                Impedimento impedimento = new Impedimento(magistrado, msg.getUserDefinedParameter("tipo"), msg.getUserDefinedParameter("detalhamento"));
-                if (impedimentos.get(codProcesso) == null) {
-                    Set<Impedimento> impedimentosSet = new HashSet<>();
-                    impedimentosSet.add(impedimento);
-                    impedimentos.put(codProcesso, impedimentosSet);
-                } else {
-                    impedimentos.get(codProcesso).add(impedimento);
-                }
-            }
-            if (magistradosQuestionados.get(codProcesso).size() == 0) {
-                HistDistribuicao distribuicao = applyDistributionRules(pc, msg.getConversationId());
-                AID protocolAgentReceiver = protocoloResponsavel.get(codProcesso);
-                requestAplicationOfDistribution(distribuicao, protocolAgentReceiver);
-            }
-        } catch (UnreadableException e) {
-            Utils.logError(getLocalName() + " : erro ao processar informação de impedimento de " + msg.getSender().getLocalName());
-        }
-    }
-
-    private void requestAplicationOfDistribution(HistDistribuicao distribuicao, AID protocolAgentReceiver) {
-        //Utils.logInfo(getLocalName() + " Distribuir para " + protocolAgentReceiver.getLocalName() + ": " + distribuicao);
-        if (distribuicao != null) {
-            String distribuicaoId = distribuicao.getSeqDistribuicao().toString();
-            addBehaviour(new UpdateDistributionDB(this, distribuicao), distribuicaoId);
-            addBehaviour(new InformDistribution(this, distribuicao, protocolAgentReceiver, distribuicaoId), distribuicaoId);
-        }
-        processosEmAnalise.remove(distribuicao.getCodProcesso());
+        lawsuitsInProcessing.remove(distribution.getCodProcesso());
         protocolAgentsInProcessing.remove(protocolAgentReceiver);
-        if (isPlaying() && protocolAgentsInProcessing.size() == 0) {
+        if (isRunning() && protocolAgentsInProcessing.size() == 0) {
             requestLawsuit();
         }
     }
 
-    public void setCompetencias(List<Competencia> competencias) {
-        this.competencias = competencias;
+    /**
+     * Defines the Judgin Organs' Competencies
+     *
+     * @param judginOrgansCompetencies a list of judgin organs competencies
+     */
+    public void setJudginOrgansCompetencies(List<Competencia> judginOrgansCompetencies) {
+        this.judginOrgansCompetencies = judginOrgansCompetencies;
     }
 
-    public DFAgentDescription[] getProtocolAgents() {
-        return protocolAgents;
-    }
-
+    /**
+     * Defines the protocol agentes available in LawDisTrA
+     * @param protocolAgents an array of protocol agent descriptions
+     */
     public void setProtocolAgents(DFAgentDescription[] protocolAgents) {
         this.protocolAgents = protocolAgents;
     }
 
-    public DFAgentDescription[] getMagistrateAgents() {
-        return magistrateAgents;
-    }
-
+    /**
+     * Defines the magistrate agents available in LawDisTrA
+     * @param magistrateAgents an array of magistrate agent descriptions
+     */
     public void setMagistrateAgents(DFAgentDescription[] magistrateAgents) {
         this.magistrateAgents = magistrateAgents;
         addBehaviour(new RequestOJComposition(this, magistrateAgents, distributionId.toString()));
     }
 
     /**
-     * Discovers the Protocol and Magistrate agents alive in the plataform
+     * Requests lawsuits from all the protocol agents available in the LawDisTrA
      */
-    private void findAgents() {
-        // Using mutex to avoid multiple findAgents on short time
-        composicoes.clear();
-        findAgentsMutex = true;
-        addBehaviour(new DiscoverMagistrateAgents(this));
-        addBehaviour(new DiscoverProtocolAgents(this));
-    }
-
     public void requestLawsuit() {
         for (DFAgentDescription dfd : protocolAgents) {
             if (!protocolAgentsInProcessing.contains(dfd.getName())) {
                 protocolAgentsInProcessing.add(dfd.getName());
-                distributionId++;
                 Utils.logInfo(getLocalName() + " - distribuicao (dist. id : " + distributionId + ") : iniciada");
                 addBehaviour(new RequestLawsuit(this, dfd, distributionId.toString()), distributionId.toString());
+                distributionId++;
             }
         }
         if (protocolAgents.length == 0) {
-            playing = false;
-            view.setPlayButtonText("Play");
+            running = false;
+            ((ADview) view).setPlayButtonText("Play");
         }
     }
 
-    public boolean isPlaying() {
-        return playing;
+    /**
+     * Checks if the LawDisTrA is currently running on continuous distribution mode
+     * @return the running state
+     */
+    public boolean isRunning() {
+        return running;
     }
 
-    public void setPlaying(boolean playing) {
-        this.playing = playing;
+    /**
+     * Defines the running state
+     *
+     * @param running true if the distribution should be made continously. False if distribution should be made one time after each request
+     */
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 }

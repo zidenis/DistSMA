@@ -18,17 +18,16 @@ import jade.domain.JADEAgentManagement.JADEManagementOntology;
  */
 public class AGP extends LawDisTrAgent {
 
+    public static final String SERVICE_TYPE = "AGP";
     public static final String STATUS_ENABLED = "ativado";
     public static final String STATUS_DISABLE = "desativ.";
     public static final String STATUS_LOADED = "";
-    public static final String SERVICE_TYPE = "AGP";
     public static boolean ENABLE_GUI = true;
-    private final String[] SERVICES = {""};
 
     private AGP agp = this;
-    private AGPview view = new AGPview(agp);
 
     protected void setup() {
+        setView(new AGPview(agp));
         super.setup();
         removeBehaviour(receiveMessages); // this agent does not need to receive messages
         getContentManager().registerLanguage(new SLCodec(), FIPANames.ContentLanguage.FIPA_SL);
@@ -37,18 +36,8 @@ public class AGP extends LawDisTrAgent {
     }
 
     @Override
-    public AGPview getView() {
-        return view;
-    }
-
-    @Override
     public String getServiceType() {
         return SERVICE_TYPE;
-    }
-
-    @Override
-    public String[] getServices() {
-        return SERVICES;
     }
 
     /**

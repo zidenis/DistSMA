@@ -16,10 +16,10 @@ public class ADview implements AgentView {
 
     private JPanel form;
     private JButton playButton;
-    private AD agent;
+    private AD ad;
 
-    public ADview(AD agent) {
-        this.agent = agent;
+    public ADview(AD ad) {
+        this.ad = ad;
         distribuirBtn.addActionListener(event -> distribuir());
         playButton.addActionListener(event -> playButtonPress());
     }
@@ -29,18 +29,17 @@ public class ADview implements AgentView {
     }
 
     private void distribuir() {
-        agent.requestLawsuit();
+        ad.requestLawsuit();
     }
 
     private void playButtonPress() {
-        if (agent.isPlaying()) {
-            agent.setPlaying(false);
+        if (ad.isRunning()) {
+            ad.setRunning(false);
             playButton.setText("Play");
         } else {
-            agent.setPlaying(true);
+            ad.setRunning(true);
             playButton.setText("Stop");
             distribuir();
-//            startContinuousPlay();
         }
     }
 

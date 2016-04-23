@@ -1,7 +1,7 @@
 package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AGP;
-import br.unb.sma.agents.LawDisTrAgent;
+import br.unb.sma.agents.gui.AGPview;
 import br.unb.sma.entities.AgentEntity;
 import br.unb.sma.utils.Utils;
 import jade.content.onto.basic.Action;
@@ -22,11 +22,11 @@ import javax.swing.*;
 public class ActivateAgent extends OneShotBehaviour {
 
     AgentEntity agentEntity;
-    LawDisTrAgent agent;
+    AGP agp;
 
-    public ActivateAgent(LawDisTrAgent agent, AgentEntity agentEntity) {
-        super(agent);
-        this.agent = agent;
+    public ActivateAgent(AGP agp, AgentEntity agentEntity) {
+        super(agp);
+        this.agp = agp;
         this.agentEntity = agentEntity;
     }
 
@@ -45,11 +45,11 @@ public class ActivateAgent extends OneShotBehaviour {
             request.setLanguage(FIPANames.ContentLanguage.FIPA_SL);
             request.setProtocol(FIPANames.InteractionProtocol.FIPA_REQUEST);
             myAgent.getContentManager().fillContent(request, actExpr);
-            agent.addBehaviour(new AchieveREInitiator(myAgent, request) {
+            agp.addBehaviour(new AchieveREInitiator(myAgent, request) {
                 @Override
                 protected void handleInform(ACLMessage inform) {
                     agentEntity.setStatus(AGP.STATUS_ENABLED);
-                    SwingUtilities.invokeLater(() -> ((AGP) myAgent).getView().update());
+                    SwingUtilities.invokeLater(() -> ((AGPview) agp.getView()).update());
                     myAgent.addBehaviour(new InformPlataformChange());
                 }
 

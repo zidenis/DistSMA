@@ -38,6 +38,6 @@ public class ObtainOJCompetencies extends OneShotBehaviour {
                 .select()
                 .from(T_COMPETENCIA)
                 .fetchInto(Competencia.class);
-        ad.setCompetencias(competencias);
+        ad.setJudginOrgansCompetencies(competencias);
     }
 }

@@ -184,7 +184,7 @@ public class AD extends LawDisTrAgent {
                         askedMagistrates.put(lawsuit.getProcesso().getCodProcesso(), magistradosDisponiveis);
                         addBehaviour(new QueryIfImpediment(this, lawsuit, magistrateAgents, msg.getConversationId()), msg.getConversationId());
                     } else {
-                        Utils.logInfo(getLocalName() + " - não há MA disponíveis");
+                        Utils.logDistributionInfo(getLocalName(), "erro", msg.getConversationId(), "não há magistrados disponíveis para distribuição", "");
                         protocolAgentsInProcessing.remove(msg.getSender());
                         lawsuitsInProcessing.remove(lawsuit.getProcesso().getCodProcesso());
                     }
@@ -293,6 +293,7 @@ public class AD extends LawDisTrAgent {
         HistDistribuicao distribution = new HistDistribuicao();
         distribution.setCodDistribuidor(distributor.getCodDistribuidor());
         distribution.setSeqDistribuicao(Integer.valueOf(distributionId));
+        Utils.logDistributionInfo(getLocalName(), "tarefa", distributionId, "aplicar regras de distribuição", "");
         ksession.insert(distribution);
         ksession.insert(lawsuit);
         for (Competencia competencia : judginOrgansCompetencies) ksession.insert(competencia);
@@ -326,6 +327,7 @@ public class AD extends LawDisTrAgent {
             String distribuicaoId = distribution.getSeqDistribuicao().toString();
             addBehaviour(new UpdateDistributionDB(this, distribution), distribuicaoId);
             addBehaviour(new InformDistribution(this, distribution, protocolAgentReceiver, distribuicaoId), distribuicaoId);
+            Utils.logDistributionInfo(getLocalName(), "info", distribuicaoId, "distribuição finalizada", "");
         }
         lawsuitsInProcessing.remove(distribution.getCodProcesso());
         protocolAgentsInProcessing.remove(protocolAgentReceiver);
@@ -379,7 +381,7 @@ public class AD extends LawDisTrAgent {
         for (DFAgentDescription dfd : protocolAgents) {
             if (!protocolAgentsInProcessing.contains(dfd.getName())) {
                 protocolAgentsInProcessing.add(dfd.getName());
-                Utils.logInfo(getLocalName() + " - distribuicao (dist. id : " + distributionId + ") : iniciada");
+                Utils.logDistributionInfo(getLocalName(), "info", distributionId.toString(), "distribuição iniciada", "");
                 addBehaviour(new RequestLawsuit(this, dfd, distributionId.toString()), distributionId.toString());
                 distributionId++;
             }

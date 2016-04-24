@@ -172,8 +172,8 @@ public abstract class LawDisTrAgent extends Agent {
      * @param msg the message that will be processed
      */
     protected void processReceivedMessage(ACLMessage msg) {
-        String id = (msg.getConversationId() == null) ? "" : "(dist. id: " + msg.getConversationId() + ") ";
-        Utils.logInfo(getLocalName() + " - mensagem " + id + "recebida de " + msg.getSender().getLocalName() + " : " + msg.getEnvelope().getComments());
+        String id = (msg.getConversationId() == null) ? "" : msg.getConversationId();
+        Utils.logDistributionInfo(msg.getSender().getLocalName(), "mensagem", id, msg.getEnvelope().getComments(), getLocalName());
     }
 
     /**
@@ -184,7 +184,7 @@ public abstract class LawDisTrAgent extends Agent {
     public void addBehaviour(Behaviour behaviour) {
         String behaviourName = behaviour.getClass().getSimpleName();
         if (!behaviourName.equals("")) {
-            Utils.logInfo(getLocalName() + " - tarefa iniciada : " + behaviour.getClass().getSimpleName());
+            Utils.logDistributionInfo(getLocalName(), "tarefa", "", behaviour.getClass().getSimpleName(), "");
         }
         super.addBehaviour(behaviour);
     }
@@ -197,7 +197,7 @@ public abstract class LawDisTrAgent extends Agent {
      * @param distributionID the distribution id
      */
     public void addBehaviour(Behaviour behaviour, String distributionID) {
-        Utils.logInfo(getLocalName() + " - tarefa (dist. id: " + distributionID + ") : " + behaviour.getClass().getSimpleName());
+        Utils.logDistributionInfo(getLocalName(), "tarefa", distributionID, behaviour.getClass().getSimpleName(), "");
         super.addBehaviour(behaviour);
     }
 

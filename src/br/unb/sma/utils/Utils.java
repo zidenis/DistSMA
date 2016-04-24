@@ -14,6 +14,9 @@ import java.util.Iterator;
  */
 public class Utils {
 
+    public static final boolean LOG_ENABLED = true;
+    public static final boolean LOG_TO_DATABASE = false;
+
     public static String obfuscate(String str) {
         ArrayList<String> strList = new ArrayList<>();
         for (String substr : str.split(" ")) {
@@ -29,11 +32,31 @@ public class Utils {
     }
 
     public static void logInfo(String msg) {
-        Logger.getJADELogger("DistSMA").log(Logger.INFO, msg);
+        if (LOG_ENABLED) {
+            Logger.getJADELogger("DistSMA").log(Logger.INFO, msg);
+        }
     }
 
     public static void logError(String msg) {
-        Logger.getJADELogger("DistSMA").log(Logger.INFO, msg);
+        if (LOG_ENABLED) {
+            Logger.getJADELogger("DistSMA").log(Logger.INFO, msg);
+        }
+    }
+
+    public static void logDistributionInfo(String agent, String infoType, String distributionId, String info, String detail) {
+        if (LOG_ENABLED) {
+            if (LOG_TO_DATABASE) {
+
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append(agent).append(" - ");
+                sb.append(infoType).append(" : ");
+                if (!distributionId.equals("")) sb.append(distributionId).append(" : ");
+                sb.append(info);
+                if (!detail.equals("")) sb.append(" : ").append(detail);
+                logInfo(sb.toString());
+            }
+        }
     }
 
     // adapted from org.apache.commons.lang3

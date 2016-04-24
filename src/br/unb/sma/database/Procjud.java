@@ -5,6 +5,7 @@ package br.unb.sma.database;
 
 
 import br.unb.sma.database.tables.*;
+import org.jooq.Sequence;
 import org.jooq.Table;
 import org.jooq.impl.SchemaImpl;
 
@@ -31,13 +32,25 @@ public class Procjud extends SchemaImpl {
      * The reference instance of <code>procjud</code>
      */
     public static final Procjud PROCJUD = new Procjud();
-    private static final long serialVersionUID = 2089729766;
+    private static final long serialVersionUID = -1897786336;
 
     /**
      * No further instances allowed
      */
     private Procjud() {
         super("procjud");
+    }
+
+    @Override
+    public final List<Sequence<?>> getSequences() {
+        List result = new ArrayList();
+        result.addAll(getSequences0());
+        return result;
+    }
+
+    private final List<Sequence<?>> getSequences0() {
+        return Arrays.<Sequence<?>>asList(
+                Sequences.T_INFO_DISTRIBUICAO_SEQ_INFORMACAO_SEQ);
     }
 
     @Override
@@ -60,6 +73,7 @@ public class Procjud extends SchemaImpl {
                 TImpedimentoAdvogado.T_IMPEDIMENTO_ADVOGADO,
                 TImpedimentoParte.T_IMPEDIMENTO_PARTE,
                 TImpedimentoProcesso.T_IMPEDIMENTO_PROCESSO,
+                TInfoDistribuicao.T_INFO_DISTRIBUICAO,
                 TMagistrado.T_MAGISTRADO,
                 TMotivoRedistribuicao.T_MOTIVO_REDISTRIBUICAO,
                 TOrgaoJudicante.T_ORGAO_JUDICANTE,

@@ -78,6 +78,11 @@ public class Tables {
     public static final TImpedimentoProcesso T_IMPEDIMENTO_PROCESSO = br.unb.sma.database.tables.TImpedimentoProcesso.T_IMPEDIMENTO_PROCESSO;
 
     /**
+     * informações com detalhes acerca de distribuições realizadas
+     */
+    public static final TInfoDistribuicao T_INFO_DISTRIBUICAO = br.unb.sma.database.tables.TInfoDistribuicao.T_INFO_DISTRIBUICAO;
+
+    /**
      * Magistrados que atuam em Orgaos Judicantes para julgar processos
      */
     public static final TMagistrado T_MAGISTRADO = br.unb.sma.database.tables.TMagistrado.T_MAGISTRADO;

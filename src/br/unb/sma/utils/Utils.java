@@ -1,12 +1,19 @@
 package br.unb.sma.utils;
 
 import jade.util.Logger;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 
 import java.awt.*;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+
+import static br.unb.sma.database.Tables.T_INFO_DISTRIBUICAO;
 
 /**
  * Created by zidenis.
@@ -15,14 +22,18 @@ import java.util.Iterator;
 public class Utils {
 
     public static final boolean LOG_ENABLED = true;
-    public static final boolean LOG_TO_DATABASE = false;
+    public static final boolean LOG_TO_DATABASE = true;
+    public static DSLContext dbDSL;
 
-    public static String obfuscate(String str) {
-        ArrayList<String> strList = new ArrayList<>();
-        for (String substr : str.split(" ")) {
-            strList.add(substr.replaceAll("(?!^.).", "*"));
+    public static DSLContext getDbDSL() {
+        if (dbDSL == null) {
+            try {
+                dbDSL = DSL.using(DriverManager.getConnection(DBconf.URL, DBconf.USERNAME, DBconf.PASSWORD), SQLDialect.POSTGRES);
+            } catch (SQLException e) {
+                Utils.logError(" erro ao conectar com banco de dados");
+            }
         }
-        return String.join(" ", strList);
+        return dbDSL;
     }
 
     public static String getCurrentDateTime() {
@@ -46,12 +57,20 @@ public class Utils {
     public static void logDistributionInfo(String agent, String infoType, String distributionId, String info, String detail) {
         if (LOG_ENABLED) {
             if (LOG_TO_DATABASE) {
-
+                if (distributionId.equals("")) distributionId = "0";
+                Utils.getDbDSL()
+                        .insertInto(T_INFO_DISTRIBUICAO)
+                        .set(T_INFO_DISTRIBUICAO.COD_AGENTE, agent)
+                        .set(T_INFO_DISTRIBUICAO.TIP_INFORMACAO, infoType)
+                        .set(T_INFO_DISTRIBUICAO.SEQ_DISTRIBUICAO, Integer.valueOf(distributionId))
+                        .set(T_INFO_DISTRIBUICAO.TXT_INFORMACAO, info)
+                        .set(T_INFO_DISTRIBUICAO.TXT_DETALHES, detail)
+                        .execute();
             } else {
                 StringBuilder sb = new StringBuilder();
                 sb.append(agent).append(" - ");
                 sb.append(infoType).append(" : ");
-                if (!distributionId.equals("")) sb.append(distributionId).append(" : ");
+                if (distributionId != null) sb.append(distributionId).append(" : ");
                 sb.append(info);
                 if (!detail.equals("")) sb.append(" : ").append(detail);
                 logInfo(sb.toString());
@@ -124,5 +143,13 @@ public class Utils {
             y = maxY + 21;
         }
         return new Point(x, y);
+    }
+
+    public static String obfuscate(String str) {
+        ArrayList<String> strList = new ArrayList<>();
+        for (String substr : str.split(" ")) {
+            strList.add(substr.replaceAll("(?!^.).", "*"));
+        }
+        return String.join(" ", strList);
     }
 }

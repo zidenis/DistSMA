@@ -166,4 +166,9 @@ public class AM extends LawDisTrAgent {
     public Magistrado getMagistrate() {
         return magistrate;
     }
+
+    @Override
+    public String getAgentName() {
+        return magistrate.getCodMagistrado();
+    }
 }

@@ -65,4 +65,8 @@ public class AGP extends LawDisTrAgent {
         addBehaviour(new ShutdownPlataformTask());
     }
 
+    @Override
+    public String getAgentName() {
+        return "LawDisTrA";
+    }
 }

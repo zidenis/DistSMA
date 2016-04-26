@@ -40,7 +40,7 @@ public abstract class LawDisTrAgent extends Agent {
     protected void setup() {
         isGUIEnabled = AGP.ENABLE_GUI;
         if (isGUIEnabled) loadGUI();
-        Utils.logInfo(getLocalName() + " - agente iniciado");
+        Utils.logDistributionInfo(getLocalName(), "info", "", "agente iniciado", "");
         //Registration of the agent in JADE Directory Facilitator (DF)
         addBehaviour(new Register(this, getServiceType(), getServices()));
         //Activating the behaviour that enables messages reception
@@ -68,7 +68,7 @@ public abstract class LawDisTrAgent extends Agent {
         } catch (Exception e) {
             Utils.logError(getLocalName() + " - erro ao desabilitar agente");
         }
-        Utils.logInfo(getLocalName() + " - agente finalizado");
+        Utils.logDistributionInfo(getLocalName(), "info", "", "agente finalizado", "");
     }
 
     /**
@@ -79,7 +79,7 @@ public abstract class LawDisTrAgent extends Agent {
             @Override
             public void run() {
                 try {
-                    gui = new JFrame(getServiceType() + " : " + getLocalName());
+                    gui = new JFrame(getServiceType() + " : " + getAgentName());
                     view = getView();
                     gui.setContentPane(view.getForm());
                     gui.pack();
@@ -144,6 +144,8 @@ public abstract class LawDisTrAgent extends Agent {
             Utils.logError(getLocalName() + " - erro ao conectar com banco de dados");
         }
     }
+
+    public abstract String getAgentName();
 
     /**
      * Gets the service type description implemented by the agent

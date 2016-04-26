@@ -155,4 +155,9 @@ public class AP extends LawDisTrAgent {
     public byte getNumTribunal() {
         return protocol.getNumTribunal();
     }
+
+    @Override
+    public String getAgentName() {
+        return protocol.getNomProtocolo();
+    }
 }

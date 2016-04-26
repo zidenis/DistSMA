@@ -9,7 +9,6 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 import org.kie.api.io.ResourceType;
-import org.kie.internal.KnowledgeBase;
 import org.kie.internal.KnowledgeBaseFactory;
 import org.kie.internal.builder.KnowledgeBuilder;
 import org.kie.internal.builder.KnowledgeBuilderError;
@@ -137,7 +136,7 @@ public class AD extends LawDisTrAgent {
                 public void run() {
                     findMagistratesAndProtocolAgents();
                 }
-            }, 1000);
+            }, 3000);
         }
     }
 
@@ -266,7 +265,8 @@ public class AD extends LawDisTrAgent {
      *
      * @return the Drools Knowledge Base
      */
-    private KnowledgeBase buildDroolsKnowledgeBase() {
+    @SuppressWarnings("deprecation")
+    private org.kie.internal.KnowledgeBase buildDroolsKnowledgeBase() {
         KnowledgeBuilder kbuilder = KnowledgeBuilderFactory.newKnowledgeBuilder();
         kbuilder.add(ResourceFactory.newClassPathResource(DROOLS_RULES_FILE), ResourceType.DRL);
         KnowledgeBuilderErrors errors = kbuilder.getErrors();
@@ -275,7 +275,7 @@ public class AD extends LawDisTrAgent {
                 Utils.logError(error.toString());
             }
         }
-        KnowledgeBase kbase = KnowledgeBaseFactory.newKnowledgeBase();
+        org.kie.internal.KnowledgeBase kbase = KnowledgeBaseFactory.newKnowledgeBase();
         kbase.addKnowledgePackages(kbuilder.getKnowledgePackages());
         return kbase;
     }
@@ -288,7 +288,8 @@ public class AD extends LawDisTrAgent {
      * @return a distribution bean
      */
     private HistDistribuicao applyDistributionRules(ProcessoCompleto lawsuit, String distributionId) {
-        KnowledgeBase kbase = buildDroolsKnowledgeBase();
+        @SuppressWarnings("deprecation")
+        org.kie.internal.KnowledgeBase kbase = buildDroolsKnowledgeBase();
         StatefulKnowledgeSession ksession = kbase.newStatefulKnowledgeSession();
         HistDistribuicao distribution = new HistDistribuicao();
         distribution.setCodDistribuidor(distributor.getCodDistribuidor());
@@ -404,5 +405,10 @@ public class AD extends LawDisTrAgent {
      */
     public void setRunning(boolean running) {
         this.running = running;
+    }
+
+    @Override
+    public String getAgentName() {
+        return distributor.getCodDistribuidor();
     }
 }

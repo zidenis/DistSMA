@@ -2,6 +2,7 @@ package br.unb.sma.entities;
 
 import br.unb.sma.agents.LawDisTrAgent;
 import br.unb.sma.database.tables.*;
+import com.google.gson.Gson;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -164,17 +165,7 @@ public class ProcessoCompleto implements Serializable {
 
     @Override
     public String toString() {
-        return "ProcessoCompleto{" +
-                "processo=" + processo +
-                ", agent=" + agent +
-                ", codProc=" + codProc +
-                ", partes=" + partes +
-                ", advogados=" + advogados +
-                ", procuradores=" + procuradores +
-                ", faseAtual=" + faseAtual +
-                ", faseAnterior=" + faseAnterior +
-                ", fasesProcRel=" + fasesProcRel +
-                '}';
+        return new Gson().toJson(this);
     }
 
     public Processo getProcesso() {

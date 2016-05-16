@@ -32,7 +32,7 @@ salience 10
         String nomeRegra = drools.getRule().getName();
         String codMagistrado = $fase.getCodMagistrado();
         String sigOJ = $fase.getSigOj();
-        String txtDistribuicao = "ProcessoRelacionado{" + $fase + "}";
+        String txtDistribuicao = $fase.toString();
         buildDistribuicao($distribuicao, $pc, "D", nomeRegra, codMagistrado, sigOJ, txtDistribuicao);
 end
 
@@ -57,13 +57,13 @@ activation-group "mutex"
         $distribuicao : HistDistribuicao()
         $listComposicoesOJs : Set() from collect(ComposicaoOj(codMagistrado != $pc.faseAnterior.codMagistrado))
         $magsImpedidos : Set() from accumulate(Impedimento($codMag : codMagistrado), collectSet($codMag))
+        $listImpedimentos : Set() from collect(Impedimento())
     then
         String nomeRegra = drools.getRule().getName();
         String sigOJ = "SDI1";
         String tipoDistribuicao;
         Random rnd = new Random();
         List<String> listCodMagsOJ = makeListOfCodMagFromOJ($listComposicoesOJs, sigOJ);
-        System.out.println(listCodMagsOJ);
         String codMagistradoSorteado = null;
         List<String> listSigOJsCompetentes = new ArrayList<>();
         listSigOJsCompetentes.add(sigOJ);
@@ -74,14 +74,14 @@ activation-group "mutex"
             sorteio.setCodMagistradoSorteado(codMagistradoSorteado);
             if ($magsImpedidos.contains(codMagistradoSorteado)) {
                 tipoDistribuicao = "N";
-                sorteio.setCodMagistradoSorteado(codMagistradoSorteado + " sorteado é impedido");
+                sorteio.setCodMagistradoSorteado(codMagistradoSorteado);
                 codMagistradoSorteado = null;
             }
         } else {
             tipoDistribuicao = "N";
             sorteio.setCodMagistradoSorteado("não há magistrado disponível para sorteio");
         }
-        String txtDistribuicao = $pc.getFaseAnterior().toString() + " " + sorteio.toString();
+        String txtDistribuicao = "{\"faseAnterior\":" + $pc.getFaseAnterior().toString() + ", \"sorteio\":" + sorteio.toString() + ", \"impedimentos\":" + $listImpedimentos + "}" ;
         buildDistribuicao($distribuicao, $pc, tipoDistribuicao, nomeRegra, codMagistradoSorteado, sigOJ, txtDistribuicao);
 end
 
@@ -94,6 +94,7 @@ activation-group "mutex"
         $listComposicoesOJs : Set() from collect(ComposicaoOj(sigOj memberOf $listSigOJsCompetentes))
         $magsImpedidos : Set() from accumulate(Impedimento($codMag : codMagistrado), collectSet($codMag))
         $distribuicao : HistDistribuicao()
+        $listImpedimentos : Set() from collect(Impedimento())
     then
         String nomeRegra = drools.getRule().getName();
         String tipoDistribuicao;
@@ -108,14 +109,14 @@ activation-group "mutex"
             sorteio.setCodMagistradoSorteado(codMagistradoSorteado);
             if ($magsImpedidos.contains(codMagistradoSorteado)) {
                 tipoDistribuicao = "N";
-                sorteio.setCodMagistradoSorteado(codMagistradoSorteado + " sorteado é impedido");
+                sorteio.setCodMagistradoSorteado(codMagistradoSorteado);
                 codMagistradoSorteado = null;
             }
         } else {
             tipoDistribuicao = "N";
             sorteio.setCodMagistradoSorteado("não há magistrado disponível para sorteio");
         }
-        String txtDistribuicao = sorteio.toString();
+        String txtDistribuicao =  "{\"sorteio\":" + sorteio.toString() + ", \"impedimentos\":" + $listImpedimentos + "}" ;
         buildDistribuicao($distribuicao, $pc, tipoDistribuicao, nomeRegra, codMagistradoSorteado, sigOJSorteado, txtDistribuicao);
 end
 

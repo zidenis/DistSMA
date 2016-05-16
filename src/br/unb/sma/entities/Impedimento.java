@@ -41,10 +41,11 @@ public class Impedimento {
 
     @Override
     public String toString() {
-        return "Impedimento{" +
-                "codMagistrado='" + codMagistrado + '\'' +
-                ", tipoImpedimento='" + tipoImpedimento + '\'' +
-                ", detalhamento='" + detalhamento + '\'' +
-                '}';
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"codMagistrado\":")
+                .append(codMagistrado == null ? "null" : "\"" + codMagistrado + "\"")
+                .append(", \"impedimentosList\" : [")
+                .append(detalhamento.substring(1)).append("}");
+        return sb.toString();
     }
 }

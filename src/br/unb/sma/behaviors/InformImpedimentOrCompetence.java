@@ -38,19 +38,19 @@ public class InformImpedimentOrCompetence extends OneShotBehaviour {
             ProcessoCompleto pc = (ProcessoCompleto) msg.getContentObject();
             boolean impediment = false;
             List<String> impedimentsTypes = new ArrayList<>();
-            List<String> impedimentsDetails = new ArrayList<>();
+            List<Object> impedimentsDetails = new ArrayList<>();
             // MA is impedid to judge the specific lawsuit
             if (am.getImpedimentsInLawsuits().contains(pc.getProcesso().getCodProcesso())) {
                 impediment = true;
                 impedimentsTypes.add("Processo");
-                impedimentsDetails.add(pc.getProcesso().toString());
+                impedimentsDetails.add(pc.getProcesso());
             }
             // MA is impedid to judge the lawsuit because of the persons involved as defendant and victim
             for (Parte parte : pc.getPartes()) {
                 if (am.getImpedimentsRelatedToParts().contains(parte.getCodParte())) {
                     impediment = true;
                     impedimentsTypes.add("Parte");
-                    impedimentsDetails.add(parte.toString());
+                    impedimentsDetails.add(parte);
                 }
             }
             // MA is impedid to judge the lawsuit because of the lawyers involved
@@ -58,7 +58,7 @@ public class InformImpedimentOrCompetence extends OneShotBehaviour {
                 if (am.getImpedimentsRelatedToLawyers().contains(adv.getNumAdvogado())) {
                     impediment = true;
                     impedimentsTypes.add("Advogado");
-                    impedimentsDetails.add(adv.toString());
+                    impedimentsDetails.add(adv);
                 }
             }
             if (impediment) {

@@ -4,6 +4,8 @@
 package br.unb.sma.entities;
 
 
+import com.google.gson.Gson;
+
 import javax.annotation.Generated;
 import java.io.Serializable;
 import java.sql.Date;
@@ -137,13 +139,14 @@ public class Processo implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%07d", numProcesso));
-        sb.append("-").append(String.format("%02d", numDigito));
-        sb.append(".").append(anoProcesso);
-        sb.append(".").append(numSegmento);
-        sb.append(".").append(String.format("%02d", numTribunal));
-        sb.append(".").append(String.format("%04d", numOrigem));
-        return sb.toString();
+//        StringBuilder sb = new StringBuilder();
+//        sb.append(String.format("%07d", numProcesso));
+//        sb.append("-").append(String.format("%02d", numDigito));
+//        sb.append(".").append(anoProcesso);
+//        sb.append(".").append(numSegmento);
+//        sb.append(".").append(String.format("%02d", numTribunal));
+//        sb.append(".").append(String.format("%04d", numOrigem));
+//        return sb.toString();
+        return new Gson().toJson(this);
     }
 }

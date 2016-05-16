@@ -1,5 +1,7 @@
 package br.unb.sma.entities;
 
+import com.google.gson.Gson;
+
 import java.util.List;
 import java.util.Set;
 
@@ -65,12 +67,6 @@ public class Sorteio {
 
     @Override
     public String toString() {
-        return "Sorteio{" +
-                "listSigOJsCompetentes=" + listSigOJsCompetentes +
-                ", sigOJSorteado='" + sigOJSorteado + '\'' +
-                ", listCodMagsOJSorteado=" + listCodMagsOJSorteado +
-                ", magsImpedidos=" + magsImpedidos +
-                ", codMagistradoSorteado='" + codMagistradoSorteado + '\'' +
-                '}';
+        return new Gson().toJson(this);
     }
 }

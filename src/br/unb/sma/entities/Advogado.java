@@ -4,6 +4,8 @@
 package br.unb.sma.entities;
 
 
+import com.google.gson.Gson;
+
 import javax.annotation.Generated;
 import java.io.Serializable;
 
@@ -84,11 +86,6 @@ public class Advogado implements Serializable {
 
     @Override
     public String toString() {
-        return "Advogado{" +
-                "numAdvogado=" + numAdvogado +
-                ", nomAdvogado='" + nomAdvogado + '\'' +
-                ", numOab=" + numOab +
-                ", sigUfOab='" + sigUfOab + '\'' +
-                '}';
+        return new Gson().toJson(this);
     }
 }

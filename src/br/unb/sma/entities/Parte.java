@@ -4,6 +4,8 @@
 package br.unb.sma.entities;
 
 
+import com.google.gson.Gson;
+
 import javax.annotation.Generated;
 import java.io.Serializable;
 
@@ -96,12 +98,6 @@ public class Parte implements Serializable {
 
     @Override
     public String toString() {
-        return "Parte{" +
-                "codParte=" + codParte +
-                ", nomParte='" + nomParte + '\'' +
-                ", tipParte='" + tipParte + '\'' +
-                ", numCnpj=" + numCnpj +
-                ", numCpf=" + numCpf +
-                '}';
+        return new Gson().toJson(this);
     }
 }

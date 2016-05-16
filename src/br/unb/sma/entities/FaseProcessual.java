@@ -4,6 +4,8 @@
 package br.unb.sma.entities;
 
 
+import com.google.gson.Gson;
+
 import javax.annotation.Generated;
 import java.io.Serializable;
 import java.sql.Date;
@@ -123,14 +125,6 @@ public class FaseProcessual implements Serializable {
 
     @Override
     public String toString() {
-        return "FaseProcessual{" +
-                "codProcesso=" + codProcesso +
-                ", dtaInicioFase=" + dtaInicioFase +
-                ", sigClasse='" + sigClasse + '\'' +
-                ", dtaTerminoFase=" + dtaTerminoFase +
-                ", codMagistrado='" + codMagistrado + '\'' +
-                ", codMotivoRedist=" + codMotivoRedist +
-                ", sigOj='" + sigOj + '\'' +
-                '}';
+        return new Gson().toJson(this);
     }
 }

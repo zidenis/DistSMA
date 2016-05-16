@@ -294,7 +294,7 @@ public class AD extends LawDisTrAgent {
         HistDistribuicao distribution = new HistDistribuicao();
         distribution.setCodDistribuidor(distributor.getCodDistribuidor());
         distribution.setSeqDistribuicao(Integer.valueOf(distributionId));
-        Utils.logDistributionInfo(getLocalName(), "tarefa", distributionId, "aplicar regras de distribuição", "");
+        Utils.logDistributionInfo(getLocalName(), "tarefa", distributionId, "ApplyDistributionRules", "");
         ksession.insert(distribution);
         ksession.insert(lawsuit);
         for (Competencia competencia : judginOrgansCompetencies) ksession.insert(competencia);
@@ -328,7 +328,7 @@ public class AD extends LawDisTrAgent {
             String distribuicaoId = distribution.getSeqDistribuicao().toString();
             addBehaviour(new UpdateDistributionDB(this, distribution), distribuicaoId);
             addBehaviour(new InformDistribution(this, distribution, protocolAgentReceiver, distribuicaoId), distribuicaoId);
-            Utils.logDistributionInfo(getLocalName(), "info", distribuicaoId, "distribuição finalizada", "");
+            Utils.logDistributionInfo(getLocalName(), "info", distribuicaoId, "DistributionDone", "");
         }
         lawsuitsInProcessing.remove(distribution.getCodProcesso());
         protocolAgentsInProcessing.remove(protocolAgentReceiver);

@@ -109,7 +109,14 @@ public class AP extends LawDisTrAgent {
             if (isGUIEnabled) {
                 SwingUtilities.invokeLater(() -> {
                     if (gui.isDisplayable()) {
-                        ((APview) view).setProcesso(lawsuit.toString());
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(String.format("%07d", lawsuit.getNumProcesso()));
+                        sb.append("-").append(String.format("%02d", lawsuit.getNumDigito()));
+                        sb.append(".").append(lawsuit.getAnoProcesso());
+                        sb.append(".").append(lawsuit.getNumSegmento());
+                        sb.append(".").append(String.format("%02d", lawsuit.getNumTribunal()));
+                        sb.append(".").append(String.format("%04d", lawsuit.getNumOrigem()));
+                        ((APview) view).setProcesso(sb.toString());
                         ((APview) view).setQtdProcessosFila(getLawsuitQty());
                     }
                 });
@@ -119,7 +126,7 @@ public class AP extends LawDisTrAgent {
             if (isGUIEnabled) {
                 SwingUtilities.invokeLater(() -> {
                     if (gui.isDisplayable()) {
-                        ((APview) view).setProcesso("sem processos");
+                        ((APview) view).setProcesso("sem processos pendentes");
                         ((APview) view).setQtdProcessosFila(getLawsuitQty());
                     }
                 });

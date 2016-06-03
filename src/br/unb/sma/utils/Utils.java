@@ -44,13 +44,13 @@ public class Utils {
 
     public static void logInfo(String msg) {
         if (LOG_ENABLED) {
-            Logger.getJADELogger("DistSMA").log(Logger.INFO, msg);
+            Logger.getJADELogger("LawDisTrA").log(Logger.INFO, msg);
         }
     }
 
     public static void logError(String msg) {
         if (LOG_ENABLED) {
-            Logger.getJADELogger("DistSMA").log(Logger.INFO, msg);
+            Logger.getJADELogger("LawDisTrA").log(Logger.INFO, msg);
         }
     }
 

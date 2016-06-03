@@ -2,6 +2,7 @@ package br.unb.sma.behaviors;
 
 import br.unb.sma.agents.AP;
 import br.unb.sma.entities.HistDistribuicao;
+import br.unb.sma.utils.Utils;
 import jade.core.behaviours.OneShotBehaviour;
 
 import static br.unb.sma.database.Tables.T_FASE_PROCESSUAL;
@@ -40,6 +41,6 @@ public class UpdateLawsuitDB extends OneShotBehaviour {
                     .and(T_FASE_PROCESSUAL.SIG_OJ.isNull())
                     .execute();
         }
-
+        Utils.logDistributionInfo(ap.getLocalName(), "info", distribuicao.getSeqDistribuicao().toString(), "distribuição concluída", "");
     }
 }

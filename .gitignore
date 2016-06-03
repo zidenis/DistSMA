@@ -2,7 +2,7 @@
 bin/
 out/
 doc/
-DistSMA.iml
+LawDisTrA.iml
 *javadoc*
 *sources*
 .DS_Store

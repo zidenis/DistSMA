@@ -46,7 +46,7 @@
             <packageName>br.unb.sma.database</packageName>
 
             <!-- The destination directory of your generated classes -->
-            <directory>/Users/zidenis/Dropbox/Dev/Java/ProcJud/DistSMA/src</directory>
+            <directory>/Users/zidenis/Dropbox/Dev/Java/ProcJud/LawDisTrA/src</directory>
         </target>
         <strategy>
             <name>br.unb.sma.utils.MyJOOQGeneratorStrategy</name>

@@ -1,2 +1,2 @@
 # Comando para gerar classes java a partir do banco de dados
-java -classpath jooq-3.7.3.jar:jooq-meta-3.7.3.jar:jooq-codegen-3.7.3.jar:postgresql-9.4.1208.jar:../out/production/DistSMA:. org.jooq.util.GenerationTool generate_classes.xml
+java -classpath jooq-3.7.3.jar:jooq-meta-3.7.3.jar:jooq-codegen-3.7.3.jar:postgresql-9.4.1208.jar:../out/production/LawDisTrA:. org.jooq.util.GenerationTool generate_classes.xml
